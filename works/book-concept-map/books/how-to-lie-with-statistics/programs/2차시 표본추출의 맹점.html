@@ -1,0 +1,585 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>표본추출의 맹점</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: card-news deck — 11 cards shown one at a time, top bar with progress + 진행 메모 toggle, bottom nav with dots; same tokens as the other reading-mentoring pages */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#D6E2F4;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1F2D46;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1F2D46;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 36px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px 16px;margin-bottom:12px}
+.series{font-size:13px;color:var(--muted);margin:0;letter-spacing:.02em}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:clamp(20px,3.2vw,26px);line-height:1.2;margin:2px 0 0}
+.tools{display:flex;gap:10px;align-items:center}
+.count{font-family:var(--f-num);font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.toggle{border:1px solid var(--rule);background:var(--sheet);color:var(--muted);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:13.5px;font-weight:500}
+.toggle[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+
+/* card */
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:28px 26px;padding-inline:clamp(18px,4.5vw,44px);display:flex;flex-direction:column;gap:20px;min-height:min(600px,78vh)}
+.card[hidden]{display:none}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.card h2{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,4vw,34px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.key{margin:auto 0 0;border-top:2px solid var(--ink);padding-top:12px;font-weight:700;font-size:16.5px}
+.key b{color:var(--red)}
+.note{margin:0;font-size:14.5px;color:var(--muted)}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:4px;padding:7px 14px;cursor:pointer;font-weight:500;font-size:14px}
+.btn:hover{background:var(--paper)}
+
+/* cover */
+.cover{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center;flex:1}
+@media (max-width:720px){.cover{grid-template-columns:1fr}}
+.cover .ttl{font-family:var(--f-display);font-weight:800;font-size:clamp(44px,8vw,72px);line-height:1.08;margin:6px 0 0;letter-spacing:-.01em}
+.cover .ttl span{color:var(--red)}
+.cover .sub{font-family:var(--f-display);font-weight:700;font-size:clamp(18px,2.6vw,22px);line-height:1.5;margin:16px 0 0}
+.cover .meta{font-size:14px;color:var(--muted);margin:12px 0 0}
+.popfig{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0}
+.popfig svg{width:100%;max-width:340px;height:auto;display:block}
+.pop{fill:var(--slate);opacity:.45}
+.pop.sel{fill:var(--red);opacity:1}
+.cap{font-size:13px;color:var(--muted);margin:0;text-align:center}
+
+/* panels */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.cols2,.cols3{grid-template-columns:1fr}}
+.panel{border:1px solid var(--rule);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel.strong{border:2px solid var(--ink)}
+.panel h3{font-size:21px;font-weight:700;margin:0;line-height:1.3}
+.panel .def{margin:0;font-weight:500}
+.panel .tagq{margin:0;color:var(--red);font-weight:700}
+.panel p{margin:0}
+.kv{display:grid;grid-template-columns:3em 1fr;gap:8px 10px;margin:0;font-size:15px;border-top:1px solid var(--rule);padding-top:10px}
+.kv dt{font-weight:700;font-size:13px;color:var(--muted);padding-top:2px}
+.kv dd{margin:0}
+
+/* card 3 flow */
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.flow .arr{transform:rotate(90deg);justify-self:center}}
+.arr{display:flex;flex-direction:column;align-items:center;color:var(--red);font-weight:700;font-size:14px}
+.arr svg{width:70px;height:24px}
+.arr path{stroke:var(--red);stroke-width:2;fill:none}
+.sm{margin:0;font-size:14.5px;color:var(--muted)}
+.sm b{color:var(--ink)}
+.line-def{margin:0;background:var(--paper);border-radius:4px;padding:10px 14px}
+
+/* card 4 */
+.quote{margin:0;border-left:3px solid var(--red);padding:6px 0 6px 18px}
+.quote p{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(17px,2.5vw,20px);line-height:1.6}
+.quote cite{display:block;font-style:normal;font-size:13px;color:var(--muted);margin-top:6px}
+.people{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--rule);padding-top:12px}
+.prow{display:grid;grid-template-columns:11em 1fr;gap:6px 12px;align-items:center}
+@media (max-width:560px){.prow{grid-template-columns:1fr}}
+.prow .lb{font-size:14px;font-weight:700}
+.prow .lb small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.pp{display:flex;flex-wrap:wrap;gap:4px}
+.pp i{width:14px;height:14px;border-radius:50%;background:var(--slate);opacity:.55}
+.pp i.bb{background:var(--red);opacity:1}
+.legend{font-size:13px;color:var(--muted);margin:0;display:flex;gap:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.legend i.bb{background:var(--red)}
+.legend i.ot{background:var(--slate);opacity:.55}
+
+/* card 5 */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);border-radius:999px;padding:5px 14px;font-size:14.5px;background:var(--paper)}
+.qs{border-top:2px solid var(--ink)}
+.q{display:grid;grid-template-columns:2em 1fr;gap:4px 10px;padding:11px 0;border-top:1px solid var(--rule)}
+.q:first-of-type{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0;font-size:16px}
+.q details{grid-column:2;font-size:15px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.sub3{font-size:15px;font-weight:700;margin:0 0 6px}
+
+/* card 6 targets */
+.targets{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:560px){.targets{grid-template-columns:1fr}}
+.tg{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.tg svg{width:100%;max-width:230px;height:auto;display:block}
+.tg h4{margin:0;font-size:16px;font-weight:700}
+.tg span{font-size:13.5px;color:var(--muted)}
+.ring1{fill:var(--slate-soft)}
+.ring2{fill:var(--sheet)}
+.ringL{fill:none;stroke:var(--rule);stroke-width:1}
+.bull{fill:var(--red)}
+.shot{fill:var(--blue);stroke:var(--sheet);stroke-width:1.5}
+.tg-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center}
+
+/* card 8 table */
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-size:13.5px;border-bottom:2px solid var(--ink)}
+tbody th{font-weight:700;font-size:14px;color:var(--muted);white-space:nowrap}
+td.bad{color:var(--red);font-weight:700}
+td.good{color:var(--blue);font-weight:700}
+
+/* card 9 */
+.eb svg{width:100%;height:auto;display:block}
+.eb .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+.eb .lb{font-size:13px;font-weight:700;fill:var(--ink)}
+.eb .pm{font-family:var(--f-num);font-size:12.5px;font-weight:600;fill:var(--blue)}
+.ebar{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1}
+.ec50{stroke:var(--red);stroke-width:1.5;stroke-dasharray:4 4}
+.eax{stroke:var(--muted);stroke-width:1}
+.big{font-family:var(--f-display);font-weight:800;font-size:clamp(19px,2.8vw,23px);line-height:1.45;margin:0}
+.big b{color:var(--red)}
+
+/* card 10 terms */
+.termbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.terms td.mean{min-width:12em}
+.terms .rv{display:none;border:1px dashed var(--muted);background:var(--paper);border-radius:4px;padding:2px 12px;cursor:pointer;font-size:13.5px;color:var(--muted)}
+.terms.hide td.mean:not(.open) .t{display:none}
+.terms.hide td.mean:not(.open) .rv{display:inline-block}
+.terms td.term{font-weight:700;white-space:nowrap}
+.terms tr.hl td.term{color:var(--red)}
+
+/* card 11 */
+.ask{display:flex;flex-direction:column;border-top:2px solid var(--ink)}
+.ak{display:grid;grid-template-columns:3rem 1fr auto;gap:6px 14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--rule)}
+@media (max-width:560px){.ak{grid-template-columns:3rem 1fr}.ak .tag{grid-column:2}}
+.ak .n{font-family:var(--f-display);font-weight:800;font-size:34px;color:var(--red);line-height:1}
+.ak p{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(18px,2.6vw,22px);line-height:1.4}
+.tag{font-size:13px;font-weight:700;padding:3px 10px;border-radius:3px;background:var(--slate-soft);white-space:nowrap;justify-self:start}
+.mission{margin:0;border:2px solid var(--red);border-radius:4px;padding:14px 16px}
+.mission b{color:var(--red);margin-right:6px}
+
+/* teacher memo */
+.memo{display:none;border:1px dashed var(--amber);background:var(--amber-soft);border-radius:4px;padding:12px 14px}
+.show-memo .memo{display:block}
+.memo .mt{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--amber);margin-bottom:4px}
+.memo p{margin:0;font-size:14.5px}
+
+/* bottom nav */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.navbtn{border:1px solid var(--rule);background:var(--sheet);padding:9px 16px;border-radius:4px;cursor:pointer;font-size:14.5px;font-weight:500;white-space:nowrap}
+.navbtn:hover:not(:disabled){border-color:var(--ink)}
+.navbtn:disabled{opacity:.35;cursor:default}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;min-width:0}
+.dotbtn{width:22px;height:22px;border:0;background:none;padding:0;cursor:pointer;display:grid;place-items:center}
+.dotbtn::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--rule)}
+.dotbtn[aria-current="true"]::after{background:var(--ink);width:10px;height:10px}
+</style>
+
+<div class="wrap" id="app">
+  <div class="top">
+    <div>
+      <p class="series">수학과 경제 데이터로 세상 읽기 · 카드뉴스</p>
+      <h1>표본추출의 맹점</h1>
+    </div>
+    <div class="tools">
+      <span class="count" id="count">01 / 11</span>
+      <button class="toggle" id="memoBtn" aria-pressed="false">진행 메모</button>
+    </div>
+  </div>
+
+  <!-- CARD 01 -->
+  <section class="card" id="c1" aria-label="카드 1">
+    <div class="cover">
+      <div>
+        <p class="ttl">표본추출의<br><span>맹점</span></p>
+        <p class="sub">1,000명에게 물으면,<br>5천만 명의 생각을 알 수 있을까?</p>
+        <p class="meta">『새빨간 거짓말, 통계』 함께 읽기 · 약 10분</p>
+      </div>
+      <figure class="popfig" style="margin:0">
+        <svg id="popSvg" viewBox="0 0 300 300" role="img" aria-label="점 100개 중 무작위로 고른 10개가 빨간색으로 표시된 그림"></svg>
+        <p class="cap">점 100개 = 모집단 · 빨간 점 10개 = 무작위로 뽑은 표본</p>
+        <button class="btn" id="popBtn">다시 뽑기</button>
+      </figure>
+    </div>
+    <aside class="memo"><span class="mt">진행 메모 · 0:00–0:30</span><p>도입. 발문: “선거 여론조사는 보통 1,000명 정도만 조사해요. 그걸로 전 국민의 생각을 안다고 말해도 될까요? 된다 / 안 된다, 이유와 함께 한마디씩.” 오른쪽 그림: 100개 점(모집단) 중 무작위로 고른 10개(표본). 오늘은 ‘어떻게 뽑아야 대표할 수 있는가’를 봅니다.</p></aside>
+  </section>
+
+  <!-- CARD 02 -->
+  <section class="card" id="c2" aria-label="카드 2" hidden>
+    <div>
+      <p class="kicker">CARD 02 · 전수조사와 표본조사</p>
+      <h2>전부 조사할까, 일부만 조사할까?</h2>
+    </div>
+    <div class="cols2">
+      <div class="panel">
+        <h3>전수조사</h3>
+        <p class="def">대상 전체를 빠짐없이 조사</p>
+        <dl class="kv">
+          <dt>예시</dt><dd>인구주택총조사, 우리 반 출석 확인</dd>
+          <dt>장점</dt><dd>정확하다</dd>
+          <dt>단점</dt><dd>시간과 비용이 많이 든다</dd>
+        </dl>
+      </div>
+      <div class="panel strong">
+        <h3>표본조사</h3>
+        <p class="def">전체 중 일부만 뽑아서 조사</p>
+        <dl class="kv">
+          <dt>예시</dt><dd>선거 여론조사, 과자 품질 검사</dd>
+          <dt>장점</dt><dd>빠르고 비용이 적게 든다</dd>
+          <dt>단점</dt><dd>잘못 뽑으면 결과가 틀린다</dd>
+        </dl>
+      </div>
+    </div>
+    <p class="key">시청률, 여론조사, 소비자 만족도처럼 뉴스에서 보는 통계는 <b>대부분 표본조사 결과</b>다</p>
+    <aside class="memo"><span class="mt">진행 메모 · 0:30–1:30</span><p>발문: “다음은 전수조사가 좋을까, 표본조사가 좋을까? ① 우리 반 수학여행 희망 지역 ② 전국 고3의 하루 평균 수면시간 ③ 공장에서 만든 통조림의 유통기한 검사” → ① 전수 ② 표본 ③ 표본(전부 열어 보면 팔 수 없음). 마지막 줄 발문: “시청률은 전국 모든 집의 TV를 확인한 걸까?” → 일부 가구만 조사한 표본조사. 이번 장의 주인공은 ‘표본조사’, 그중에서도 ‘잘못 뽑는’ 경우.</p></aside>
+  </section>
+
+  <!-- CARD 03 -->
+  <section class="card" id="c3" aria-label="카드 3" hidden>
+    <div>
+      <p class="kicker">CARD 03 · 모집단과 표본</p>
+      <h2>알고 싶은 ‘전체’와 실제로 본 ‘일부’</h2>
+    </div>
+    <div class="flow">
+      <div class="panel strong">
+        <h3>모집단</h3>
+        <p class="def">조사하고 싶은 대상 전체</p>
+        <p class="sm">예: 대한민국 고3 전체</p>
+        <p class="sm">모집단의 평균 → <b>모평균</b></p>
+      </div>
+      <div class="arr" aria-hidden="true">추출<svg viewBox="0 0 70 24"><path d="M2 12 H64 M56 4 L66 12 L56 20"/></svg></div>
+      <div class="panel">
+        <h3>표본</h3>
+        <p class="def">모집단에서 실제로 뽑은 일부</p>
+        <p class="sm">예: 설문에 응답한 고3 1,000명</p>
+        <p class="sm">표본의 평균 → <b>표본평균</b></p>
+      </div>
+    </div>
+    <p class="line-def"><b>표본의 크기</b> = 표본에 들어 있는 대상의 수 (위 예에서는 <span class="num">1,000</span>)</p>
+    <p class="key">표본을 보고 모집단을 짐작하는 것, <b>이것이 통계의 핵심</b></p>
+    <aside class="memo"><span class="mt">진행 메모 · 1:30–2:30</span><p>발문: “뉴스에서 ‘고3의 62%가 찬성’이라고 하면, 62%는 모집단의 값일까 표본의 값일까?” → 표본에서 나온 값. 그런데 기사에서는 전체(모집단)의 값처럼 보인다는 점이 이번 장을 읽는 출발점.</p></aside>
+  </section>
+
+  <!-- CARD 04 -->
+  <section class="card" id="c4" aria-label="카드 4" hidden>
+    <div>
+      <p class="kicker">CARD 04 · 대표성</p>
+      <h2>좋은 표본은 모집단의 축소판이다</h2>
+    </div>
+    <blockquote class="quote">
+      <p>표본을 근거로 어떤 결론을 내릴 때 그 표본이 모집단 전체를 대표하는 것이라야 한다. 모집단 안의 다양한 사람들이 거의 같은 비율로 표본에 들어 있어야 한다. 이 성질을 <span style="color:var(--red)">대표성</span>이라고 부른다.</p>
+      <cite>28쪽</cite>
+    </blockquote>
+    <div class="people">
+      <div class="prow"><span class="lb">우리 반 30명<small>모집단</small></span><span class="pp" id="ppAll"></span></div>
+      <div class="prow"><span class="lb">표본 ① 6명<small>농구부 1 · 나머지 5 (반과 같은 비율)</small></span><span class="pp" id="ppGood"></span></div>
+      <div class="prow"><span class="lb">표본 ② 5명<small>농구부 5명만</small></span><span class="pp" id="ppBad"></span></div>
+      <p class="legend"><span><i class="bb"></i>농구부</span><span><i class="ot"></i>나머지 학생</span></p>
+    </div>
+    <p class="key">우리 반 평균 키를 알고 싶다면, 어느 표본이 반을 <b>더 닮았을까?</b></p>
+    <aside class="memo"><span class="mt">진행 메모 · 2:30–3:00</span><p>발문: “우리 반 30명의 평균 키를 알고 싶은데, 농구부 5명만 재서 평균을 내면?” → 평균이 실제보다 커진다. 표본이 작아서가 아니라 ‘한쪽으로 쏠려서’ 틀린 것. 이 차이(크기 문제 vs 쏠림 문제)가 수업 끝까지 이어지는 핵심.</p></aside>
+  </section>
+
+  <!-- CARD 05 -->
+  <section class="card" id="c5" aria-label="카드 5" hidden>
+    <div>
+      <p class="kicker">CARD 05 · 임의추출</p>
+      <h2>누구나 뽑힐 기회가 똑같게</h2>
+    </div>
+    <div class="panel strong">
+      <h3>임의추출 <span style="font-size:15px;font-weight:500;color:var(--muted)">(무작위추출)</span></h3>
+      <p class="def">모집단의 모든 대상이 표본으로 뽑힐 가능성이 같도록 뽑는 방법</p>
+    </div>
+    <div>
+      <p class="sub3">이렇게 뽑는다</p>
+      <div class="chips"><span class="chip">제비뽑기</span><span class="chip">난수</span><span class="chip">컴퓨터 추첨</span></div>
+    </div>
+    <div class="qs">
+      <p class="sub3" style="padding-top:12px">직접 생각해 보기</p>
+      <div class="q">
+        <span class="qn">①</span>
+        <p>우리 반 30명 중 5명을 제비뽑기로 뽑을 때, 내가 뽑힐 확률은?</p>
+        <details id="a5-1"><summary>정답 보기</summary><div class="ans"><span class="num">5/30 = 1/6</span>. 30명 모두 똑같이 1/6의 기회를 가진다.</div></details>
+      </div>
+      <div class="q">
+        <span class="qn">②</span>
+        <p>키가 큰 순서대로 5명을 뽑는다면, 임의추출일까?</p>
+        <details id="a5-2"><summary>정답 보기</summary><div class="ans">아니다. 키 큰 학생만 뽑힐 수 있고 키 작은 학생은 기회가 없으므로 ‘모두에게 같은 기회’가 아니다.</div></details>
+      </div>
+    </div>
+    <aside class="memo"><span class="mt">진행 메모 · 3:00–4:00</span><p>정답: ① 5/30 = 1/6 ② 아니다. 키 큰 학생만 뽑힐 수 있고 키 작은 학생은 기회가 없으므로 ‘모두에게 같은 기회’가 아니다. 임의추출은 ‘아무렇게나 대충’이 아니라 ‘기회를 똑같이 주는 것’이라는 점을 강조.</p></aside>
+  </section>
+
+  <!-- CARD 06 -->
+  <section class="card" id="c6" aria-label="카드 6" hidden>
+    <div>
+      <p class="kicker">CARD 06 · 편향</p>
+      <h2>편향: 결과가 한쪽으로 쏠리는 것</h2>
+    </div>
+    <div class="panel strong">
+      <h3>편향 <span style="font-size:15px;font-weight:500;color:var(--muted)">(bias)</span></h3>
+      <p class="def">표본이 모집단을 고르게 담지 못해서, 결과가 한 방향으로 틀어지는 것</p>
+      <p class="sm">예: 학생들의 평균 공부 시간을 독서실 앞에서만 물어보면 → 실제보다 길게 나온다</p>
+    </div>
+    <div class="targets">
+      <div class="tg">
+        <svg id="tgA" viewBox="0 0 220 220" role="img" aria-label="임의추출 과녁: 파란 점들이 중심 주변에 고르게 흩어져 있다"></svg>
+        <h4>임의추출</h4><span>실제 값 근처에 고르게</span>
+      </div>
+      <div class="tg">
+        <svg id="tgB" viewBox="0 0 220 220" role="img" aria-label="편향된 추출 과녁: 파란 점들이 중심에서 벗어난 한쪽에 몰려 있다"></svg>
+        <h4>편향된 추출</h4><span>엉뚱한 곳에 몰림</span>
+      </div>
+    </div>
+    <div class="tg-row">
+      <button class="btn" id="shotBtn">한 번 더 조사하기</button>
+      <p class="note">과녁의 빨간 중심 = 실제 값 · 파란 점 = 표본을 뽑을 때마다 나온 결과</p>
+    </div>
+    <p class="key">편향은 여러 번 다시 조사해도 <b>같은 방향으로 틀린다</b></p>
+    <aside class="memo"><span class="mt">진행 메모 · 4:00–5:00</span><p>과녁 그림으로 설명: 임의추출은 매번 조금씩 다르게 나와도 중심 주변에 모이고, 편향된 추출은 매번 비슷하게 나와서 믿음이 가지만 늘 같은 쪽으로 틀린다. 발문: “독서실 앞 말고 또 어디에서 물으면 공부 시간이 실제와 다르게 나올까?” (PC방 앞 → 짧게 등)</p></aside>
+  </section>
+
+  <!-- CARD 07 -->
+  <section class="card" id="c7" aria-label="카드 7" hidden>
+    <div>
+      <p class="kicker">CARD 07 · 편향이 숨어드는 길</p>
+      <h2>편향은 세 군데로 몰래 들어온다</h2>
+    </div>
+    <div class="cols3">
+      <div class="panel"><h3>선택 편향</h3><p class="tagq">누구를 뽑았나?</p><p>온라인으로만 설문하면 인터넷을 잘 쓰지 않는 사람은 처음부터 빠진다.</p></div>
+      <div class="panel"><h3>무응답 편향</h3><p class="tagq">누가 대답했나?</p><p>시간이 많거나 할 말이 많은 사람만 답하면, 응답자가 전체를 대표하지 못한다.</p></div>
+      <div class="panel"><h3>응답 편향</h3><p class="tagq">어떻게 대답했나?</p><p>“1년에 책을 몇 권 읽나요?”처럼 좋아 보이는 답이 있는 질문은 부풀려 답하기 쉽다.</p></div>
+    </div>
+    <p class="key">세 경우 모두 사람 수를 늘려도 해결되지 않는다 → <b>뽑는 ‘방법’을 바꿔야 한다</b></p>
+    <aside class="memo"><span class="mt">진행 메모 · 5:00–6:00</span><p>책 연결 발문: “오늘 읽은 부분에 나온 사례는 이 세 가지 중 어디에 해당할까? 두 가지가 겹친 사례도 있을까?” 학생이 책 속 사례를 직접 분류하게 하고, 분류 근거를 한 문장으로 말하게 할 것. 우리 주변 예시 찾기: 학교 급식 만족도 설문, 앱 별점, 유튜브 댓글 여론.</p></aside>
+  </section>
+
+  <!-- CARD 08 -->
+  <section class="card" id="c8" aria-label="카드 8" hidden>
+    <div>
+      <p class="kicker">CARD 08 · 역사 속 실험: 1936년 미국 대선</p>
+      <h2>200만 명에게 묻고도 틀린 예측</h2>
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>구분</th><th>리터러리 다이제스트 (잡지)</th><th>갤럽 (여론조사 기관)</th></tr></thead>
+        <tbody>
+          <tr><th>표본 크기</th><td><span class="num">200만</span> 명 이상 응답</td><td>약 <span class="num">5만</span> 명</td></tr>
+          <tr><th>표본 출처</th><td>잡지 구독자 · 전화번호부 · 자동차 등록 명단</td><td>인구 구성 비율을 맞춘 표본</td></tr>
+          <tr><th>예측</th><td class="bad">랜던 승리 → 틀림</td><td class="good">루스벨트 승리 → 맞힘</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="key" style="font-weight:500">실제 결과는 <b>루스벨트 압승</b>(득표율 약 61%). 대공황기에 전화·자동차를 가진 사람은 상대적으로 여유 있는 계층이었고, 우편을 받은 사람 중 회신한 사람도 4명 중 1명 정도였다.</p>
+    <aside class="memo"><span class="mt">진행 메모 · 6:00–7:00</span><p>약 1,000만 장의 모의 투표용지를 보내 200만 명 이상이 회신한 대규모 조사였지만, 훨씬 작은 표본의 갤럽이 맞혔다. 발문: “이 사례에는 앞 카드의 세 가지 편향 중 어떤 것이 들어 있을까?” → 선택 편향(명단 자체가 부유층 쪽) + 무응답 편향(회신한 사람만 집계). 후속 연구에서는 무응답 쪽 영향이 더 컸다는 분석도 있다는 점을 덧붙여 ‘원인을 하나로 단정하지 않기’를 강조.</p></aside>
+  </section>
+
+  <!-- CARD 09 -->
+  <section class="card" id="c9" aria-label="카드 9" hidden>
+    <div>
+      <p class="kicker">CARD 09 · 표본의 크기와 표본오차</p>
+      <h2>많이 뽑으면 해결될까?</h2>
+    </div>
+    <div class="cols2">
+      <div class="panel">
+        <h3>표본오차</h3>
+        <p class="def">누가 뽑혔느냐에 따라 우연히 생기는 차이<br>→ 표본이 클수록 줄어든다</p>
+        <div class="eb">
+          <svg viewBox="0 0 360 132" role="img" aria-label="실제 50%일 때 100명 조사는 약 ±10%p, 1,000명 조사는 약 ±3%p 범위에서 결과가 나온다">
+            <line class="ec50" x1="210" y1="14" x2="210" y2="104"/>
+            <text class="lb" x="0" y="44">100명</text>
+            <rect class="ebar" x="140" y="32" width="140" height="16" rx="2"/>
+            <text class="pm" x="290" y="45">±10%p</text>
+            <text class="lb" x="0" y="86">1,000명</text>
+            <rect class="ebar" x="189" y="74" width="42" height="16" rx="2"/>
+            <text class="pm" x="241" y="87">±3%p</text>
+            <line class="eax" x1="70" y1="106" x2="350" y2="106"/>
+            <text class="tick" x="70" y="122" text-anchor="middle">30%</text>
+            <text class="tick" x="140" y="122" text-anchor="middle">40%</text>
+            <text class="tick" x="210" y="122" text-anchor="middle">50%</text>
+            <text class="tick" x="280" y="122" text-anchor="middle">60%</text>
+            <text class="tick" x="350" y="122" text-anchor="middle">70%</text>
+          </svg>
+        </div>
+        <p class="sm">여론조사 기사의 ‘표본오차 ±3.1%p’가 바로 이것</p>
+      </div>
+      <div class="panel strong">
+        <h3>하지만, 편향은?</h3>
+        <p class="big">표본을 아무리 키워도<br><b>줄지 않는다</b></p>
+        <p class="sm">200만 명에게 물은 1936년 조사도 틀렸다.</p>
+      </div>
+    </div>
+    <p class="key">중요한 건 ‘얼마나 많이’보다 <b>‘어떻게 뽑았나’</b></p>
+    <aside class="memo"><span class="mt">진행 메모 · 7:00–8:00</span><p>±10%p, ±3%p는 응답 비율이 50% 근처일 때 95% 신뢰수준 기준의 대략값(정확히는 9.8%p, 3.1%p). 공식은 확률과 통계에서 다시 만난다고만 언급. 발문: “1,000명을 제대로 뽑은 조사와 200만 명을 한쪽으로 쏠리게 뽑은 조사 중 무엇을 믿겠니?” → 1,000명 임의추출 조사.</p></aside>
+  </section>
+
+  <!-- CARD 10 -->
+  <section class="card" id="c10" aria-label="카드 10" hidden>
+    <div>
+      <p class="kicker">CARD 10 · 용어 한눈에 정리</p>
+      <h2>오늘의 용어 9개</h2>
+    </div>
+    <div class="termbar">
+      <button class="toggle" id="meanBtn" aria-pressed="false">뜻 가리기</button>
+      <p class="note">뜻을 가린 뒤 하나씩 말해 보고, ‘뜻 보기’를 눌러 확인하자.</p>
+    </div>
+    <div class="tablebox">
+      <table class="terms" id="terms">
+        <thead><tr><th>용어</th><th>뜻</th></tr></thead>
+        <tbody>
+          <tr><td class="term">전수조사</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">대상 전체를 빠짐없이 조사하는 것</span></td></tr>
+          <tr><td class="term">표본조사</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">전체 중 일부만 뽑아서 조사하는 것</span></td></tr>
+          <tr><td class="term">모집단</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">조사하고 싶은 대상 전체</span></td></tr>
+          <tr><td class="term">표본</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">모집단에서 실제로 뽑은 일부</span></td></tr>
+          <tr><td class="term">표본의 크기</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">표본에 들어 있는 대상의 수</span></td></tr>
+          <tr><td class="term">대표성</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">표본이 모집단을 고르게 닮은 정도</span></td></tr>
+          <tr><td class="term">임의추출</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">모든 대상이 뽑힐 가능성이 같도록 뽑는 방법</span></td></tr>
+          <tr class="hl"><td class="term">편향</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">뽑는 방법 때문에 결과가 한쪽으로 쏠리는 것</span></td></tr>
+          <tr class="hl"><td class="term">표본오차</td><td class="mean"><button class="rv">뜻 보기</button><span class="t">우연히 생기는 차이 (표본이 클수록 줄어듦)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <aside class="memo"><span class="mt">진행 메모 · 8:00–9:00</span><p>왼쪽 용어만 보여 주고 뜻을 학생이 먼저 말해 보게 한 뒤 확인. 특히 ‘편향’과 ‘표본오차’의 차이(방법 탓 vs 우연 탓)를 자기 말로 설명할 수 있는지 확인할 것.</p></aside>
+  </section>
+
+  <!-- CARD 11 -->
+  <section class="card" id="c11" aria-label="카드 11" hidden>
+    <div>
+      <p class="kicker">CARD 11 · 오늘의 질문</p>
+      <h2>통계 기사를 보면 이렇게 물어보자</h2>
+    </div>
+    <div class="ask">
+      <div class="ak"><span class="n">1</span><p>누구를 대상으로 조사했나?</p><span class="tag">모집단</span></div>
+      <div class="ak"><span class="n">2</span><p>어떻게 뽑았나? 한쪽으로 쏠리지 않았나?</p><span class="tag">임의추출 · 편향</span></div>
+      <div class="ak"><span class="n">3</span><p>몇 명에게 물었나?</p><span class="tag">표본의 크기</span></div>
+    </div>
+    <p class="mission"><b>미션</b>책에서 표본이 한쪽으로 쏠린 사례를 하나 골라, 이 세 질문으로 점검해 보기</p>
+    <aside class="memo"><span class="mt">진행 메모 · 9:00–10:00</span><p>미션은 학습지 ‘나만의 질문’ 칸과 연결. “이 통계는 틀렸다” 대신 “이 자료로 어디까지 말할 수 있을까?”로 문장을 바꿔 쓰게 할 것. 관찰 포인트: 책 속 사례에서 모집단·추출 방법·표본의 크기를 스스로 구분해 표본 편향 가능성을 설명함(실제로 수행한 경우에만 기록).</p></aside>
+  </section>
+
+  <nav class="nav" aria-label="카드 이동">
+    <button class="navbtn" id="prev">← 이전</button>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" id="next">다음 →</button>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var N=11, cur=1, NS='http://www.w3.org/2000/svg';
+
+  /* navigation */
+  var dots=$('dots');
+  for(var i=1;i<=N;i++){
+    var b=document.createElement('button'); b.className='dotbtn'; b.id='dot'+i;
+    b.setAttribute('aria-label',i+'번 카드'); b.setAttribute('data-i',i);
+    b.addEventListener('click',function(){go(+this.getAttribute('data-i'))});
+    dots.appendChild(b);
+  }
+  function pad(n){return (n<10?'0':'')+n}
+  function render(){
+    var m=/^#c(\d+)$/.exec(location.hash), i=m?Math.min(N,Math.max(1,+m[1])):1; cur=i;
+    for(var k=1;k<=N;k++){ $('c'+k).hidden=k!==i; $('dot'+k).setAttribute('aria-current',k===i?'true':'false'); }
+    $('count').textContent=pad(i)+' / '+N;
+    $('prev').disabled=i===1; $('next').disabled=i===N;
+  }
+  function go(i){ i=Math.min(N,Math.max(1,i)); if(location.hash!=='#c'+i){location.hash='c'+i}else{render()} window.scrollTo(0,0); }
+  $('prev').addEventListener('click',function(){go(cur-1)});
+  $('next').addEventListener('click',function(){go(cur+1)});
+  window.addEventListener('hashchange',render);
+  document.addEventListener('keydown',function(e){
+    if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if(e.key==='ArrowRight') go(cur+1);
+    if(e.key==='ArrowLeft') go(cur-1);
+  });
+
+  /* teacher memo */
+  $('memoBtn').addEventListener('click',function(){
+    var on=this.getAttribute('aria-pressed')!=='true';
+    this.setAttribute('aria-pressed',on?'true':'false');
+    $('app').classList.toggle('show-memo',on);
+  });
+
+  /* card 1: population dots */
+  var seed=7; function rnd(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646}
+  var pts=[];
+  for(var r=0;r<10;r++)for(var c=0;c<10;c++){pts.push([24+c*28+(rnd()-.5)*12, 24+r*28+(rnd()-.5)*12])}
+  var popSvg=$('popSvg'), popEls=[];
+  pts.forEach(function(p){var e=document.createElementNS(NS,'circle');e.setAttribute('cx',p[0].toFixed(1));e.setAttribute('cy',p[1].toFixed(1));e.setAttribute('r','7');e.setAttribute('class','pop');popSvg.appendChild(e);popEls.push(e)});
+  function pick(){
+    var idx=[];for(var i=0;i<100;i++)idx.push(i);
+    for(var j=99;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=idx[j];idx[j]=idx[k];idx[k]=t}
+    var sel={};idx.slice(0,10).forEach(function(i){sel[i]=1});
+    popEls.forEach(function(e,i){e.setAttribute('class','pop'+(sel[i]?' sel':''));e.setAttribute('r',sel[i]?'9':'7')});
+  }
+  $('popBtn').addEventListener('click',pick); pick();
+
+  /* card 4: people */
+  function people(id,bb,ot){var h='';for(var i=0;i<bb;i++)h+='<i class="bb"></i>';for(var j=0;j<ot;j++)h+='<i></i>';$(id).innerHTML=h}
+  people('ppAll',5,25); people('ppGood',1,5); people('ppBad',5,0);
+
+  /* card 6: targets */
+  function target(svg){
+    var rings=[[100,'ring1'],[76,'ring2'],[52,'ring1'],[28,'ring2']];
+    rings.forEach(function(r){var e=document.createElementNS(NS,'circle');e.setAttribute('cx','110');e.setAttribute('cy','110');e.setAttribute('r',r[0]);e.setAttribute('class',r[1]);svg.appendChild(e);
+      var l=document.createElementNS(NS,'circle');l.setAttribute('cx','110');l.setAttribute('cy','110');l.setAttribute('r',r[0]);l.setAttribute('class','ringL');svg.appendChild(l)});
+    var b=document.createElementNS(NS,'circle');b.setAttribute('cx','110');b.setAttribute('cy','110');b.setAttribute('r','9');b.setAttribute('class','bull');svg.appendChild(b);
+  }
+  function randn(){var u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  var tA=$('tgA'), tB=$('tgB'), shots=0;
+  target(tA); target(tB);
+  function shot(){
+    if(shots>=30) return; shots++;
+    var ax=110+randn()*26, ay=110+randn()*26;
+    var bx=110+48+randn()*9, by=110-40+randn()*9;
+    [[tA,ax,ay],[tB,bx,by]].forEach(function(s){
+      var x=Math.max(8,Math.min(212,s[1])), y=Math.max(8,Math.min(212,s[2]));
+      var e=document.createElementNS(NS,'circle');e.setAttribute('cx',x.toFixed(1));e.setAttribute('cy',y.toFixed(1));e.setAttribute('r','5.5');e.setAttribute('class','shot');s[0].appendChild(e);
+    });
+    if(shots>=30) $('shotBtn').disabled=true;
+  }
+  for(var s=0;s<7;s++) shot();
+  $('shotBtn').addEventListener('click',shot);
+
+  /* card 10: hide meanings */
+  var terms=$('terms');
+  $('meanBtn').addEventListener('click',function(){
+    var on=this.getAttribute('aria-pressed')!=='true';
+    this.setAttribute('aria-pressed',on?'true':'false');
+    this.textContent=on?'뜻 모두 보이기':'뜻 가리기';
+    terms.classList.toggle('hide',on);
+    terms.querySelectorAll('td.mean').forEach(function(td){td.classList.remove('open')});
+  });
+  terms.querySelectorAll('.rv').forEach(function(b){b.addEventListener('click',function(){b.parentNode.classList.add('open')})});
+
+  render();
+})();
+</script>
+
+</body></html>

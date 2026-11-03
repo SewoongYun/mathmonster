@@ -1,0 +1,439 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>예상오차와 표준오차</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: two tabs — (1) 10번 재서 예상오차 구하기 (4단계를 하나씩 공개), (2) 피터 98 vs 린다 101; same tokens as the other reading-mentoring pages */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#D6E2F4;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1F2D46;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1F2D46;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:14px}
+.book{font-size:13px;color:var(--muted);letter-spacing:.02em;margin:0}
+.topbar h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.4vw,34px);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font-size:14px;font-weight:500;border:1px solid var(--rule);background:var(--sheet);color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:26px 22px;padding-inline:clamp(18px,4vw,38px);display:flex;flex-direction:column;gap:20px}
+.sheet[hidden]{display:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.title{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.6vw,28px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.lead{margin:0;max-width:64ch}
+.lead b{color:var(--red)}
+h3{font-size:16px;font-weight:700;margin:0}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.ctl-label{font-size:14px;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--sheet);padding:8px 14px;cursor:pointer;font-weight:500;font-size:14px;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:500;font-size:15px}
+.btn.primary{background:var(--ink);color:var(--sheet)}
+.btn.primary:hover{opacity:.9}
+
+/* steps */
+.steps{display:flex;flex-direction:column;border-top:2px solid var(--ink)}
+.step{display:grid;grid-template-columns:30px 1fr;gap:0 12px;padding:14px 0;border-bottom:1px solid var(--rule)}
+.badge{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-num);font-weight:600;font-size:14px;border:1.5px solid var(--ink)}
+.step.cur .badge{background:var(--ink);color:var(--sheet)}
+.step.dim .badge{border-color:var(--rule);color:var(--muted)}
+.step.dim h3{color:var(--muted)}
+.step h3{align-self:center}
+.step-b{grid-column:2;min-width:0;display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.ph{margin:0;color:var(--muted);font-size:14px}
+.ex{margin:0;font-size:15px}
+.ex b{color:var(--red)}
+
+.tablebox{overflow-x:auto}
+table.m{border-collapse:collapse;font-size:14px;width:100%}
+table.m th,table.m td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--rule);white-space:nowrap;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+table.m th:first-child{text-align:left;font-family:var(--f-body);font-weight:700;font-size:13px;position:sticky;left:0;background:var(--sheet)}
+table.m thead th{color:var(--muted);font-size:12.5px;font-weight:500}
+table.m tr.err td{font-weight:600}
+table.m td.q{color:var(--muted);font-weight:400}
+
+.line{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.ec{display:flex;flex-direction:column;align-items:center;gap:2px}
+.ec .v{min-width:3.3em;padding:6px 6px;border:1px solid var(--rule);border-radius:4px;text-align:center;font-family:var(--f-num);font-weight:600;font-size:15px;background:var(--sheet)}
+.ec .p{font-size:11.5px;color:var(--muted);font-family:var(--f-num)}
+.ec.lo .v{background:var(--blue-soft);border-color:var(--blue)}
+.ec.mid .v{border:2px solid var(--red)}
+.divider{width:2px;height:36px;background:var(--red);margin:0 4px;border-radius:1px}
+.formula{margin:0;font-size:16px}
+.formula .num{font-weight:600}
+.result{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(19px,3.2vw,23px);line-height:1.4}
+.result em{font-style:normal;color:var(--red)}
+
+.svgbox{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
+.svgbox svg{display:block;width:100%;min-width:520px;height:auto}
+svg text{font-family:var(--f-body)}
+svg .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+svg .bandT{font-family:var(--f-num);font-size:12px;font-weight:600;fill:var(--blue)}
+.band{fill:var(--blue-soft)}
+.bedge{stroke:var(--blue);stroke-width:1;stroke-dasharray:3 3}
+.c100{stroke:var(--red);stroke-width:1.5;stroke-dasharray:5 4}
+.dIn{fill:var(--blue)}
+.dOut{fill:var(--slate);opacity:.75}
+.ax{stroke:var(--muted);stroke-width:1}
+.leg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13.5px;color:var(--muted);margin:0}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.leg i.in{background:var(--blue)}
+.leg i.out{background:var(--slate)}
+
+.hist{border:1px solid var(--rule);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.hist .sub{margin:0;font-size:14px;color:var(--muted)}
+.hrow{display:grid;grid-template-columns:9em 1fr auto;gap:6px 12px;align-items:center;padding-top:8px;border-top:1px solid var(--rule)}
+@media (max-width:560px){.hrow{grid-template-columns:1fr auto}.hrow .hchips{grid-column:1/-1;grid-row:2}}
+.hrow .who{font-weight:700;font-size:14px}
+.hchips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.hc{font-family:var(--f-num);font-size:13px;padding:2px 8px;border-radius:3px;background:var(--paper)}
+.hnone{font-size:13px;color:var(--muted)}
+.havg{font-family:var(--f-num);font-weight:600;font-size:14px;white-space:nowrap}
+.pen{font-family:var(--f-pen);color:var(--red);font-size:26px;line-height:1.2;margin:0;transform:rotate(-1.5deg);transform-origin:left center}
+
+.ledger{margin:8px 0 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+.ledger div{display:grid;grid-template-columns:9em 1fr;gap:4px 14px;padding:10px 2px;border-top:1px solid var(--rule)}
+.ledger div:first-child{border-top:0}
+.ledger dt{font-weight:700}
+.ledger dt small{display:block;font-weight:500;font-size:12.5px}
+.ledger .pe dt small{color:var(--blue)}
+.ledger .se dt small{color:var(--amber)}
+.ledger dd{margin:0;min-width:0}
+@media (max-width:520px){.ledger div{grid-template-columns:1fr}}
+.foot{font-size:14px;margin:8px 0 0}
+.foot b{color:var(--red)}
+
+/* tab 2 */
+.pBar{fill:var(--blue)}
+.lBar{fill:var(--red)}
+.pDot{fill:var(--sheet);stroke:var(--blue);stroke-width:3}
+.lDot{fill:var(--sheet);stroke:var(--red);stroke-width:3}
+.overlap{fill:var(--slate-soft)}
+svg .ovT{font-size:12.5px;fill:var(--muted);font-weight:700}
+svg .lbl{font-size:14px;font-weight:700;fill:var(--ink)}
+svg .frac{font-family:var(--f-num);font-size:14px;font-weight:600;fill:var(--ink)}
+svg .fracM{font-family:var(--f-num);font-size:12.5px;fill:var(--muted)}
+.verdict{border-left:3px solid var(--red);background:var(--paper);padding:12px 14px;margin:0}
+.verdict b{color:var(--red)}
+.qs{border-top:2px solid var(--ink)}
+.q{display:grid;grid-template-columns:2.2em 1fr;gap:4px 10px;padding:11px 0;border-top:1px solid var(--rule)}
+.q:first-of-type{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0}
+.q details{grid-column:2;font-size:14.5px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.mine{margin:0;font-size:14.5px;color:var(--muted)}
+.mine b{color:var(--ink)}
+
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.navbtn{border:1px solid var(--rule);background:none;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500}
+.navbtn:hover{border-color:var(--ink)}
+.spacer{flex:1}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <header>
+      <p class="book">『새빨간 거짓말, 통계』 94~95쪽 · 예상오차</p>
+      <h1>예상오차와 표준오차</h1>
+    </header>
+    <nav class="tabs" aria-label="탭 이동">
+      <button class="tab" id="tab1" data-go="1" aria-selected="true">1 · 예상오차 구하기</button>
+      <button class="tab" id="tab2" data-go="2" aria-selected="false">2 · 피터 98 vs 린다 101</button>
+    </nav>
+  </div>
+
+  <!-- TAB 1 -->
+  <section class="sheet" id="t1" aria-labelledby="h-t1">
+    <div>
+      <p class="eyebrow">1 / 2 · 예상오차 구하기</p>
+      <h2 class="title" id="h-t1">±3은 어디서 나왔을까?</h2>
+    </div>
+    <p class="lead">책에서는 발걸음으로 잰 100m의 예상오차가 3m라고 했다. 이 3은 미리 정한 숫자가 아니라 <b>여러 번 재 보고 얻은 결과</b>다. 정확히 100m인 거리를 직접 10번 재서 구해 보자.</p>
+
+    <div class="row">
+      <span class="ctl-label">누가 재나?</span>
+      <div class="seg" role="group" aria-label="재는 사람">
+        <button id="wBook" data-w="book" aria-pressed="true">책 속 사람</button>
+        <button id="wWob" data-w="wobbly" aria-pressed="false">걸음이 들쭉날쭉한 사람</button>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step" id="st1">
+        <span class="badge">1</span><h3>100m를 발걸음으로 10번 잰다</h3>
+        <div class="step-b">
+          <div class="tablebox">
+            <table class="m">
+              <thead><tr><th>회차</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr></thead>
+              <tbody>
+                <tr id="rowV"><th>잰 값 (m)</th></tr>
+                <tr id="rowE" class="err"><th>오차 (m)</th></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="step" id="st2">
+        <span class="badge">2</span><h3>100m에서 얼마나 벗어났는지(오차)를 구한다</h3>
+        <div class="step-b" id="b2"></div>
+      </div>
+      <div class="step" id="st3">
+        <span class="badge">3</span><h3>오차를 작은 순서로 줄 세운다</h3>
+        <div class="step-b" id="b3"></div>
+      </div>
+      <div class="step" id="st4">
+        <span class="badge">4</span><h3>가운데 값을 찾는다 → 이것이 예상오차</h3>
+        <div class="step-b" id="b4"></div>
+      </div>
+    </div>
+
+    <div class="row"><button class="btn primary" id="next">다음 단계 →</button></div>
+
+    <div class="hist">
+      <h3>여러 번 해 보면?</h3>
+      <p class="sub">④까지 끝낼 때마다 구한 예상오차가 여기에 쌓인다. 두 사람을 번갈아 몇 번씩 해 보고 평균을 비교하자.</p>
+      <div class="hrow"><span class="who">책 속 사람</span><span class="hchips" id="hBook"></span><span class="havg" id="aBook"></span></div>
+      <div class="hrow"><span class="who">들쭉날쭉한 사람</span><span class="hchips" id="hWob"></span><span class="havg" id="aWob"></span></div>
+    </div>
+
+    <p class="pen">±3은 정해진 숫자가 아니다. 그 사람 발걸음이 얼마나 정확한지 보여 주는 ‘성적표’다!</p>
+
+    <div>
+      <h3>예상오차와 표준오차</h3>
+      <dl class="ledger">
+        <div class="pe"><dt>예상오차<small>절반(1/2)이 들어오는 폭</small></dt><dd>오차를 줄 세웠을 때 가운데 값. 책의 예: <span class="num">100 ± 3m</span></dd></div>
+        <div class="se"><dt>표준오차<small>약 2/3가 들어오는 폭</small></dt><dd>더 많이(약 2/3) 들어오게 잡은 폭이라 예상오차보다 넓다. 같은 측정이면 약 <span class="num">100 ± 4.4m</span>. 오늘날 통계학자 대부분은 이것을 쓴다.</dd></div>
+      </dl>
+      <p class="foot">같은 측정도 ‘±3’이 될 수도, ‘±4.4’가 될 수도 있다. ‘±’를 보면 <b>절반 기준인지, 2/3 기준인지</b> 먼저 확인하자.</p>
+    </div>
+
+    <div class="nav"><span class="spacer"></span><button class="navbtn" data-go="2">2 · 피터 98 vs 린다 101 →</button></div>
+  </section>
+
+  <!-- TAB 2 -->
+  <section class="sheet" id="t2" aria-labelledby="h-t2" hidden>
+    <div>
+      <p class="eyebrow">2 / 2 · 차이가 오차만큼 작다면</p>
+      <h2 class="title" id="h-t2">린다가 피터보다 똑똑할까?</h2>
+    </div>
+    <p class="lead">지능검사(IQ)도 측정이라 오차가 있다. 책에 따르면 이 검사의 예상오차는 <b>3</b>이다. 피터는 <b>98</b>, 린다는 <b>101</b>이 나왔다.</p>
+
+    <figure style="margin:0">
+      <div class="svgbox" id="iq"></div>
+    </figure>
+    <p class="leg" style="margin-top:-12px">막대 = 실제 IQ가 있을 수 있는 범위(±3) · 막대 위 1/2 = 실제 IQ가 이 안에 있을 확률 · 양옆 1/4 = 밖에 있을 확률</p>
+
+    <p class="verdict">두 범위가 98~101에서 겹친다. 피터의 실제 IQ가 101 이상일 확률도 1/4, 린다의 실제 IQ가 98 이하일 확률도 1/4이다. 3점 차이는 예상오차 3과 같은 크기라서, 이 검사만으로 <b>“린다가 더 똑똑하다”고 단정할 수 없다.</b></p>
+
+    <div class="qs">
+      <h3 style="padding-top:12px;font-size:15px">생각해 보기</h3>
+      <div class="q">
+        <span class="qn">Q1</span>
+        <p>피터의 IQ는 98±3이다. 실제 IQ가 95 이하일 확률은?</p>
+        <details id="qa1"><summary>답 보기</summary>
+          <div class="ans"><b>1/4</b>. 95~101 안에 있을 확률이 1/2이다. 남은 1/2을 위(101 이상)와 아래(95 이하)가 똑같이 나눠 가진다.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q2</span>
+        <p>‘린다가 더 똑똑하다’고 말하려면 무엇이 더 필요할까?</p>
+        <details id="qa2"><summary>답 보기</summary>
+          <div class="ans">점수 차이가 오차보다 훨씬 커야 한다. 아니면 검사를 여러 번 보거나, 예상오차가 더 작은(더 정확한) 검사를 써야 한다. 1탭에서 본 것처럼 오차는 측정 방법의 성적표다.</div>
+        </details>
+      </div>
+    </div>
+
+    <p class="mine"><b>나만의 질문 1개</b> · 시험 점수, 체력 측정, 키 재기처럼 내 주변의 ‘측정값’에는 어떤 오차가 숨어 있을까?</p>
+
+    <div class="nav"><button class="navbtn" data-go="1">← 1 · 예상오차 구하기</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+
+  /* tabs */
+  function renderTab(){
+    var i=location.hash==='#t2'?2:1;
+    $('t1').hidden=i!==1; $('t2').hidden=i!==2;
+    $('tab1').setAttribute('aria-selected',i===1?'true':'false');
+    $('tab2').setAttribute('aria-selected',i===2?'true':'false');
+  }
+  function go(i){ if(location.hash!=='#t'+i){location.hash='t'+i}else{renderTab()} window.scrollTo(0,0); }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(+b.getAttribute('data-go'))})});
+  window.addEventListener('hashchange',renderTab);
+
+  /* ---------- tab 1 ---------- */
+  // 예상오차 3m(책 속 사람), 6m(들쭉날쭉) → 표준편차 = 예상오차 ÷ 0.6745
+  var SIG={book:3/0.6745, wobbly:6/0.6745};
+  var walker='book', step=1, vals=[], errs=[], sorted=[], hist={book:[],wobbly:[]};
+  function randn(){var u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  function f1(t){return (t/10).toFixed(1)}           // tenths → "97.4"
+  function gen(){
+    do{
+      vals=[]; errs=[];
+      for(var i=0;i<10;i++){
+        var t=Math.round((100+SIG[walker]*randn())*10); // in tenths of a metre
+        vals.push(t); errs.push(Math.abs(t-1000));
+      }
+      sorted=errs.slice().sort(function(a,b){return a-b});
+    }while(sorted[4]===sorted[5]);
+  }
+  function E2(){return sorted[4]+sorted[5]}               // 2 × 예상오차, in tenths
+  function eExact(){var s=E2(); return s%2===0?(s/20).toFixed(1):(s/20).toFixed(2)}
+  function eRound(){return (Math.round(E2()/2)/10).toFixed(1)}
+
+  function render(){
+    document.querySelectorAll('[data-w]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-w')===walker?'true':'false')});
+    for(var i=1;i<=4;i++){
+      var el=$('st'+i); el.classList.toggle('cur',i===step); el.classList.toggle('dim',i>step);
+    }
+    // table
+    var rv='<th>잰 값 (m)</th>', re='<th>오차 (m)</th>';
+    for(var j=0;j<10;j++){
+      rv+='<td>'+f1(vals[j])+'</td>';
+      re+=step>=2?'<td>'+f1(errs[j])+'</td>':'<td class="q">?</td>';
+    }
+    $('rowV').innerHTML=rv; $('rowE').innerHTML=re;
+    // step 2
+    if(step>=2){
+      var v0=vals[0], e0=errs[0], d;
+      if(v0===1000) d='1회 100.0m → 딱 100m → 오차 <b>0.0m</b>';
+      else d='1회 '+f1(v0)+'m → 100m보다 '+f1(e0)+'m '+(v0<1000?'짧다':'길다')+' → 오차 <b>'+f1(e0)+'m</b>';
+      $('b2').innerHTML='<p class="ex">짧든 길든 <b>벗어난 거리</b>만 본다. 예: '+d+'</p><p class="ph">위 표의 ‘오차’ 줄이 채워졌다.</p>';
+    } else $('b2').innerHTML='<p class="ph">‘다음 단계’를 누르면 나온다.</p>';
+    // step 3
+    if(step>=3){
+      var h='<div class="line">';
+      for(var k=0;k<10;k++){
+        if(step>=4&&k===5) h+='<span class="divider" aria-hidden="true"></span>';
+        var cls='ec'+(step>=4&&k<5?' lo':'')+(step>=4&&(k===4||k===5)?' mid':'');
+        h+='<span class="'+cls+'"><span class="v">'+f1(sorted[k])+'</span><span class="p">'+(k+1)+'</span></span>';
+      }
+      h+='</div>';
+      $('b3').innerHTML=h;
+    } else $('b3').innerHTML='<p class="ph">‘다음 단계’를 누르면 나온다.</p>';
+    // step 4
+    if(step>=4){
+      var odd=E2()%2!==0;
+      var res='예상오차 = <em>'+eExact()+'m</em>'+(odd?' (약 '+eRound()+'m)':'')+' → 100 ± '+eRound()+'m';
+      $('b4').innerHTML=
+        '<p class="formula">10개의 가운데 = 5번째와 6번째의 평균 → (<span class="num">'+f1(sorted[4])+'</span> + <span class="num">'+f1(sorted[5])+'</span>) ÷ 2 = <span class="num">'+eExact()+'</span></p>'+
+        '<p class="result">'+res+'</p>'+
+        '<p class="ex">줄의 왼쪽 5개는 예상오차보다 작고, 오른쪽 5개는 크다. 그래서 10번 중 <b>딱 절반(5번)</b>이 이 범위 안에 들어온다.</p>'+
+        '<div class="svgbox">'+lineSVG()+'</div>'+
+        '<p class="leg"><span><i class="in"></i>범위 안 5번</span><span><i class="out"></i>범위 밖 5번</span></p>';
+    } else $('b4').innerHTML='<p class="ph">‘다음 단계’를 누르면 나온다.</p>';
+    $('next').textContent=step<4?'다음 단계 →':'새로 10번 재기';
+    renderHist();
+  }
+  function lineSVG(){
+    var W=700,H=152,L=30,R=670,AX=112,MIN=75,MAX=125;
+    function X(m){m=Math.max(MIN,Math.min(MAX,m));return L+(m-MIN)/(MAX-MIN)*(R-L)}
+    var e=E2()/20, lo=100-e, hi=100+e;
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="10번 잰 값을 수직선에 찍은 그림. 100±'+eRound()+'m 안에 5개, 밖에 5개가 있다.">';
+    s+='<rect class="band" x="'+X(lo).toFixed(1)+'" y="26" width="'+(X(hi)-X(lo)).toFixed(1)+'" height="'+(AX-26)+'"/>';
+    s+='<line class="bedge" x1="'+X(lo).toFixed(1)+'" y1="26" x2="'+X(lo).toFixed(1)+'" y2="'+AX+'"/>';
+    s+='<line class="bedge" x1="'+X(hi).toFixed(1)+'" y1="26" x2="'+X(hi).toFixed(1)+'" y2="'+AX+'"/>';
+    s+='<line class="c100" x1="'+X(100)+'" y1="20" x2="'+X(100)+'" y2="'+AX+'"/>';
+    s+='<text class="bandT" x="'+(X(lo)-4).toFixed(1)+'" y="20" text-anchor="end">'+(+lo.toFixed(2))+'</text>';
+    s+='<text class="bandT" x="'+(X(hi)+4).toFixed(1)+'" y="20">'+(+hi.toFixed(2))+'</text>';
+    var idx=[0,1,2,3,4,5,6,7,8,9].sort(function(a,b){return vals[a]-vals[b]}), rowEnd=[];
+    idx.forEach(function(i){
+      var x=X(vals[i]/10), r=0;
+      while(rowEnd[r]!==undefined&&x-rowEnd[r]<14&&r<5) r++;
+      rowEnd[r]=x;
+      var inside=errs[i]*2<E2();
+      s+='<circle class="'+(inside?'dIn':'dOut')+'" cx="'+x.toFixed(1)+'" cy="'+(AX-10-r*15)+'" r="6"/>';
+    });
+    s+='<line class="ax" x1="'+L+'" y1="'+AX+'" x2="'+R+'" y2="'+AX+'"/>';
+    for(var t=MIN;t<=MAX;t+=5){s+='<text class="tick" x="'+X(t).toFixed(1)+'" y="'+(AX+18)+'" text-anchor="middle">'+t+'</text>'}
+    s+='<text class="tick" x="'+R+'" y="'+(AX+36)+'" text-anchor="end">(m)</text>';
+    return s+'</svg>';
+  }
+  function renderHist(){
+    [['book','hBook','aBook'],['wobbly','hWob','aWob']].forEach(function(r){
+      var a=hist[r[0]];
+      $(r[1]).innerHTML=a.length?a.map(function(x){return '<span class="hc">'+x.toFixed(1)+'</span>'}).join(''):'<span class="hnone">아직 없음</span>';
+      if(a.length){var m=a.reduce(function(p,c){return p+c},0)/a.length; $(r[2]).textContent='평균 '+m.toFixed(1)+'m ('+a.length+'회)';}
+      else $(r[2]).textContent='';
+    });
+  }
+  $('next').addEventListener('click',function(){
+    if(step<4){ step++; if(step===4) hist[walker].push(E2()/20); }
+    else { gen(); step=1; }
+    render();
+  });
+  document.querySelectorAll('[data-w]').forEach(function(b){b.addEventListener('click',function(){
+    if(walker===b.getAttribute('data-w')) return;
+    walker=b.getAttribute('data-w'); gen(); step=1; render();
+  })});
+
+  /* ---------- tab 2 ---------- */
+  function drawIQ(){
+    var e=3, W=700,H=240,L=96,R=670;
+    function X(v){return L+(v-85)/30*(R-L)}
+    var rows=[{n:'피터',v:98,y:86,bar:'pBar',dot:'pDot'},{n:'린다',v:101,y:170,bar:'lBar',dot:'lDot'}];
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="피터 98±3(95~101)과 린다 101±3(98~104)의 범위가 98~101에서 겹친다.">';
+    s+='<rect class="overlap" x="'+X(98).toFixed(1)+'" y="44" width="'+(X(101)-X(98)).toFixed(1)+'" height="150"/>';
+    s+='<text class="ovT" x="'+((X(98)+X(101))/2).toFixed(1)+'" y="34" text-anchor="middle">겹치는 구간 98~101</text>';
+    rows.forEach(function(r){
+      s+='<text class="lbl" x="6" y="'+(r.y+5)+'">'+r.n+' '+r.v+'</text>';
+      s+='<line class="ax" x1="'+L+'" y1="'+r.y+'" x2="'+R+'" y2="'+r.y+'"/>';
+      s+='<rect class="'+r.bar+'" x="'+X(r.v-e).toFixed(1)+'" y="'+(r.y-5)+'" width="'+(X(r.v+e)-X(r.v-e)).toFixed(1)+'" height="10" rx="2"/>';
+      s+='<circle class="'+r.dot+'" cx="'+X(r.v).toFixed(1)+'" cy="'+r.y+'" r="6"/>';
+      s+='<text class="frac" x="'+X(r.v).toFixed(1)+'" y="'+(r.y-15)+'" text-anchor="middle">1/2</text>';
+      s+='<text class="fracM" x="'+(X(r.v-e)-6).toFixed(1)+'" y="'+(r.y-9)+'" text-anchor="end">1/4</text>';
+      s+='<text class="fracM" x="'+(X(r.v+e)+6).toFixed(1)+'" y="'+(r.y-9)+'">1/4</text>';
+      s+='<text class="tick" x="'+X(r.v-e).toFixed(1)+'" y="'+(r.y+22)+'" text-anchor="middle">'+(r.v-e)+'</text>';
+      s+='<text class="tick" x="'+X(r.v+e).toFixed(1)+'" y="'+(r.y+22)+'" text-anchor="middle">'+(r.v+e)+'</text>';
+    });
+    s+='<line class="ax" x1="'+L+'" y1="218" x2="'+R+'" y2="218"/>';
+    for(var t=85;t<=115;t+=5){s+='<text class="tick" x="'+X(t).toFixed(1)+'" y="234" text-anchor="middle">'+t+'</text>'}
+    $('iq').innerHTML=s+'</svg>';
+  }
+
+  gen(); render(); drawIQ(); renderTab();
+})();
+</script>
+
+</body></html>

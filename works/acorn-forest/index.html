@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>다람이의 도토리 숲 · 6차</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.2/dist/galmuri.css">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d0f1a;color:#35433c;font-family:system-ui,'Malgun Gothic',sans-serif}
+#game{position:fixed;inset:0;display:block;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
+.px{font-family:Galmuri11,'Malgun Gothic',system-ui,sans-serif}
+.ui{position:fixed;z-index:5;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.ui button{font:inherit}
+.box{background:#1d2440;color:#fff;border:3px solid #f4f1e6;box-shadow:0 0 0 3px #1d2440,0 6px 0 3px rgba(0,0,0,.25);border-radius:6px}
+.acorn{display:inline-block;width:14px;height:14px;background:var(--acorn) center/contain no-repeat;image-rendering:pixelated;vertical-align:-2px}
+#hud{top:calc(10px + env(safe-area-inset-top));left:12px;padding:7px 11px;max-width:min(54vw,330px);font-size:13px;line-height:1.55}
+#hud .row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#hud .pill{background:#f2c14e;color:#2b1d1a;border-radius:4px;padding:0 7px}
+#hud .bonus{background:#9fd3ef;color:#1d2440;border-radius:4px;padding:0 6px}
+#hud-obj{margin-top:2px;color:#cfe6ff}
+#mapbox{top:calc(10px + env(safe-area-inset-top));right:12px;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+#minimap{width:112px;height:88px;display:block;image-rendering:pixelated;border:3px solid #f4f1e6;box-shadow:0 0 0 3px #1d2440;border-radius:4px;background:#3d7fc0}
+#mapbox .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:130px}
+#mapbox button{min-height:34px;min-width:34px;padding:3px 7px;font-size:12px;cursor:pointer}
+#mapbox .off{opacity:.45;text-decoration:line-through}
+@media(max-width:480px){#hud{font-size:12px;max-width:50vw;padding:5px 8px}#minimap{width:84px;height:66px}#mapbox button{min-height:32px;padding:2px 5px;font-size:11px}}
+#joy{left:calc(22px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.16);border:3px solid rgba(244,241,230,.7);touch-action:none}
+#knob{position:absolute;left:36px;top:36px;width:54px;height:54px;border-radius:50%;background:rgba(244,241,230,.95);box-shadow:0 0 0 3px #1d2440;pointer-events:none}
+#act{right:calc(20px + env(safe-area-inset-right));bottom:calc(38px + env(safe-area-inset-bottom));width:104px;min-height:88px;padding:8px 6px;font-size:17px;line-height:1.3;cursor:pointer;background:#3d6b4e;touch-action:manipulation}
+#act small{display:block;font-size:11px;opacity:.9;overflow-wrap:anywhere;margin-top:2px}
+#run{right:calc(30px + env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));width:84px;min-height:44px;font-size:13px;cursor:pointer;touch-action:manipulation}
+#run.on{background:#c95f3a}
+#hint{left:50%;transform:translateX(-50%);bottom:14px;padding:4px 12px;font-size:12px;white-space:nowrap}
+#dialog{left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));width:min(640px,calc(100% - 30px));box-sizing:border-box;padding:12px 16px 8px;font-size:16px;line-height:1.7;cursor:pointer;z-index:8;min-height:96px}
+#dialog .dname{position:absolute;top:-17px;left:12px;background:#f2c14e;color:#2b1d1a;border:3px solid #f4f1e6;box-shadow:0 0 0 3px #1d2440;border-radius:4px;padding:0 9px;font-size:13px}
+#dialog .dtext{margin-top:4px;word-break:keep-all;min-height:1.7em}
+#dialog .dnext{text-align:right;font-size:12px;color:#f2c14e;animation:blink 1s steps(2) infinite}
+#dialog .choices{display:grid;gap:6px;margin:8px 0 4px}
+#dialog .choices button{text-align:left;background:#2a3358;color:#fff;border:2px solid #6a7aa8;border-radius:4px;padding:8px 10px 8px 26px;font:inherit;font-size:15px;cursor:pointer;position:relative;min-height:42px}
+#dialog .choices button.sel{border-color:#f2c14e;background:#34406b}
+#dialog .choices button.sel::before{content:'▶';position:absolute;left:8px;color:#f2c14e}
+@keyframes blink{50%{opacity:0}}
+#toast{top:26%;left:50%;transform:translate(-50%,-6px);padding:9px 16px;font-size:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:9;max-width:calc(100% - 50px);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#fade{position:fixed;inset:0;background:#0d0f1a;opacity:0;pointer-events:none;transition:opacity .24s steps(4);z-index:15}
+.pop{position:fixed;left:50%;top:40%;z-index:40;pointer-events:none;font-size:22px;color:#f2c14e;text-shadow:3px 3px 0 #1d2440,-2px -2px 0 #1d2440,2px -2px 0 #1d2440,-2px 2px 0 #1d2440;animation:pop 1.3s steps(12) forwards;white-space:nowrap}
+.pop .acorn{width:24px;height:24px;vertical-align:-4px;margin-right:4px}
+@keyframes pop{0%{transform:translate(-50%,10px) scale(.6);opacity:0}15%{transform:translate(-50%,0) scale(1.15);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-50px) scale(1);opacity:0}}
+#panel{position:fixed;inset:0;z-index:20;background:rgba(13,15,26,.7);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(12px + env(safe-area-inset-top)) 0 30px;box-sizing:border-box}
+#panel .sheet{max-width:680px;margin:0 auto;padding:0 10px}
+#panel-close{position:sticky;top:0;z-index:2;display:block;margin:0 0 12px auto;min-height:44px;padding:6px 14px;font-size:14px;cursor:pointer}
+#title,#fail{position:fixed;inset:0;z-index:30;background:#1d2440;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
+#title .card,#fail .card{max-width:430px;width:100%;text-align:center;padding:20px 18px;margin:auto}
+#title h1{font-size:28px;margin:8px 0;line-height:1.35;color:#f2c14e;font-weight:400;text-shadow:3px 3px 0 #000}
+#title .kicker{font-size:12px;letter-spacing:2px;color:#9fd3ef}
+#title-sprite{width:144px;height:192px;image-rendering:pixelated;display:block;margin:4px auto 0}
+#title ul{text-align:left;font-size:13px;padding-left:18px;line-height:1.8;margin:12px 0;color:#e8eefc}
+#title-go{width:100%;min-height:52px;font-size:18px;cursor:pointer;background:#3d6b4e;margin-top:6px}
+#title .small,#fail .small{font-size:12px;color:#aab4d4;margin-top:12px}
+#title a,#fail a{color:#f2c14e}
+/* 원본 2D 게임 스타일 (미션 패널) */
+#darami-app{--ink:#35433c;--muted:#687268;--green:#34654e;--cream:#fffaf0;--peach:#f6d9be;--mint:#dfecdf;color:var(--ink);background:var(--cream);font:16px/1.65 system-ui,'Malgun Gothic',sans-serif;max-width:680px;margin:auto;padding:24px 20px 36px;box-sizing:border-box;border-radius:24px}#darami-app *{box-sizing:border-box}#darami-app h1{font-size:32px;line-height:1.3;letter-spacing:-1px;margin:12px 0}#darami-app h2{font-size:24px;line-height:1.4;margin:12px 0}#darami-app h3{font-size:18px;margin:12px 0}#darami-app p{margin:10px 0}#darami-app .kicker{font-size:12px;font-weight:800;letter-spacing:2px;color:var(--green)}#darami-app .top{display:flex;justify-content:space-between;align-items:center;gap:12px}#darami-app .badge{background:var(--mint);padding:5px 12px;border-radius:22px;font-size:14px;font-weight:700}#darami-app .hero{text-align:center;padding:8px 0 16px}#darami-app .mascot{width:160px;height:135px;display:block;margin:auto}#darami-app .panel{background:#fff;border:1px solid #e5e9de;border-radius:18px;padding:18px;margin:14px 0}#darami-app .note{background:#edf3e9;border-radius:14px;padding:14px 16px;margin:14px 0}#darami-app .warning{background:#fff0de}#darami-app .small{font-size:13px;color:#566254}#darami-app button{font:inherit;line-height:1.5;min-height:48px;border-radius:12px;border:1px solid #cad6c7;background:white;color:var(--ink);padding:12px 16px;cursor:pointer;white-space:normal}#darami-app button:hover{background:#eef4eb}#darami-app button:disabled{opacity:.5;cursor:not-allowed}#darami-app .primary{background:var(--green);color:#fff;border-color:var(--green);font-weight:700;width:100%}#darami-app .primary:hover{background:#244b39}#darami-app .choices{display:grid;gap:10px;margin:15px 0}#darami-app .choices button{text-align:left}#darami-app .choices strong{display:block;font-size:18px}#darami-app input,#darami-app textarea,#darami-app select{font:inherit;color:var(--ink);max-width:100%;width:100%;border:1px solid #bdcbbb;border-radius:9px;padding:10px;background:#fff}#darami-app input[type=range]{padding:0;accent-color:var(--green);min-height:34px;border:0}#darami-app input[type=checkbox]{width:20px;height:20px;flex-shrink:0;accent-color:var(--green)}#darami-app label{display:block;margin:10px 0 4px}#darami-app .check{display:flex;align-items:center;gap:10px}#darami-app .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}#darami-app .amount{font-weight:750;font-variant-numeric:tabular-nums}#darami-app table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}#darami-app td,#darami-app th{padding:8px 5px;border-bottom:1px solid #e3e7df;text-align:left;overflow-wrap:anywhere}#darami-app td:last-child{text-align:right}#darami-app .progress{height:6px;background:#e6e9dd;border-radius:6px;overflow:hidden;margin:18px 0}#darami-app .progress i{display:block;background:var(--green);height:100%}#darami-app .bar{display:flex;height:24px;border-radius:6px;overflow:hidden;background:#e9ecdf;margin:7px 0}#darami-app .bar span{min-width:0}#darami-app .need{background:#91b6a2}#darami-app .want{background:#edbd91}#darami-app .save{background:#b0a9d0}#darami-app .legend{font-size:13px;display:flex;gap:14px;flex-wrap:wrap}#darami-app .legend i{display:inline-block;width:10px;height:10px;margin-right:4px}#darami-app .goal{border-top:1px solid #e4e8de;padding:12px 0}#darami-app .error{color:#8b3c26;font-weight:650}#darami-app .success{color:#2e684b;font-weight:650}#darami-app .footer{font-size:12px;color:#64705f;margin-top:24px}#darami-app .ghost{background:transparent;border:0;font-size:13px;min-height:44px}#darami-app .receipt{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 system-ui;max-height:500px;overflow:auto}#darami-app :focus-visible{outline:3px solid #c18c48;outline-offset:3px}@media(max-width:400px){#darami-app{padding:18px 12px}#darami-app h1{font-size:27px}#darami-app .panel{padding:13px}#darami-app td,#darami-app th{padding:7px 3px}}
+/* 미션 패널 도트 RPG 스타일 덮어쓰기 */
+#panel #darami-app{--green:#3d6b4e;--ink:#2b2a3a;background:#f4ecd8;color:#2b2a3a;border:4px solid #1d2440;box-shadow:0 0 0 4px #f4f1e6,0 0 0 8px #1d2440,0 10px 0 8px rgba(0,0,0,.3);border-radius:4px;margin:8px 8px 20px}
+#panel #darami-app h1,#panel #darami-app h2,#panel #darami-app h3,#panel #darami-app .kicker,#panel #darami-app .badge,#panel #darami-app button,#panel #darami-app label,#panel #darami-app summary{font-family:Galmuri11,'Malgun Gothic',system-ui,sans-serif;font-weight:400}
+#panel #darami-app h2{color:#1d2440;border-bottom:3px dotted #c8b48c;padding-bottom:6px}
+#panel #darami-app .kicker{color:#8a5a36;letter-spacing:1px}
+#panel #darami-app .badge{background:#f2c14e;color:#2b1d1a;border:2px solid #1d2440;border-radius:4px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+#panel #darami-app .badge::before{content:'';width:14px;height:14px;background:var(--acorn) center/contain no-repeat;image-rendering:pixelated}
+#panel #darami-app button{border:3px solid #1d2440;border-radius:4px;background:#fffaf0;box-shadow:3px 3px 0 #1d2440;transition:transform .05s}
+#panel #darami-app button:hover{background:#fff3d6}
+#panel #darami-app button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #1d2440}
+#panel #darami-app .primary{background:#3d6b4e;color:#fff;border-color:#1d2440}
+#panel #darami-app .primary:hover{background:#2f573f}
+#panel #darami-app .choices button{padding-left:34px;position:relative}
+#panel #darami-app .choices button::before{content:'▶';position:absolute;left:12px;top:13px;color:#c95f3a;opacity:0}
+#panel #darami-app .choices button:hover::before,#panel #darami-app .choices button:focus::before{opacity:1}
+#panel #darami-app .note{background:#e9dfc4;border:3px solid #1d2440;border-radius:4px}
+#panel #darami-app .warning{background:#f6d9be}
+#panel #darami-app .panel{background:#fffaf0;border:3px solid #1d2440;border-radius:4px}
+#panel #darami-app .progress{height:12px;border:2px solid #1d2440;border-radius:2px;background:repeating-linear-gradient(90deg,#e0d4b4 0 10px,#d4c6a2 10px 12px)}
+#panel #darami-app .progress i{background:repeating-linear-gradient(90deg,#3d6b4e 0 10px,#2f573f 10px 12px)}
+#panel #darami-app input,#panel #darami-app select,#panel #darami-app textarea{border:2px solid #1d2440;border-radius:3px}
+#panel #darami-app input[type=range]{border:0}
+#panel #darami-app .bar{border:2px solid #1d2440;border-radius:2px}
+#panel #darami-app .term{border-top:2px dotted #c8b48c;padding:6px 0}#panel #darami-app .term h3{margin:6px 0 2px}#panel #darami-app .term p{margin:4px 0}
+#ending{position:fixed;inset:0;z-index:30;background:#1d2440;display:flex;padding:16px;box-sizing:border-box;overflow:auto}
+#ending .card{max-width:520px;width:100%;margin:auto;text-align:center;padding:18px 16px}
+#ending .kicker{color:#9fd3ef;font-size:18px;margin:6px 0 12px}
+#end-scene{width:100%;max-width:480px;image-rendering:pixelated;border:3px solid #f4f1e6;display:block;margin:0 auto 10px}
+#ending h2{color:#f2c14e;font-size:22px;font-weight:400;margin:8px 0}
+#ending p{font-size:15px;line-height:1.7;word-break:keep-all;margin:6px 0}
+#end-rate{color:#9fd3ef}
+#ending button{min-height:48px;width:100%;font-size:16px;cursor:pointer;margin-top:10px}
+#end-cert{background:#3d6b4e}
+.shop-item{display:flex;align-items:center;gap:10px;justify-content:space-between;border-top:2px dotted #c8b48c;padding:8px 0}
+.shop-item button{min-height:44px!important;padding:6px 12px!important;white-space:nowrap!important;flex-shrink:0}
+.shop-view{display:block;width:72px;height:96px;image-rendering:pixelated;margin:6px auto}
+.cert{background:#fffaf0;border:4px solid #1d2440;box-shadow:inset 0 0 0 4px #f2c14e,inset 0 0 0 7px #1d2440;padding:22px 18px;margin:6px 0 20px;text-align:center;font-family:Galmuri11,'Malgun Gothic',sans-serif}
+.cert .ct{font-size:13px;letter-spacing:3px;color:#8a5a36}
+.cert h2{border:0!important;margin:4px 0 8px!important;font-size:26px!important}
+.cert img{width:72px;height:96px;image-rendering:pixelated;display:block;margin:6px auto}
+.cert .nm{font-size:22px;color:#1d2440}
+.cert .ttl{display:inline-block;white-space:nowrap;background:#3d6b4e;color:#fff;padding:3px 12px;border:2px solid #1d2440;margin:6px 0 12px}
+.cert .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.cert .grid div{background:#f4ecd8;border:2px solid #1d2440;padding:7px 4px;font-size:13px}
+.cert .grid b{display:block;font-size:19px;font-weight:400;color:#1d2440;margin-top:2px}
+.cert ul{list-style:none;padding:0;margin:10px 0 0;text-align:left;font-size:13px;line-height:1.9;font-family:system-ui,'Malgun Gothic',sans-serif}
+.cert li{border-bottom:1px dotted #c8b48c;display:flex;justify-content:space-between;gap:10px}
+.cert .dt{font-size:12px;color:#687268;margin-top:10px}
+
+:focus-visible{outline:3px solid #e59326;outline-offset:3px}button{touch-action:manipulation} .budget-tools{display:flex;flex-wrap:wrap;gap:6px}.budget-tools button{flex:1;padding:6px!important;font-size:13px!important}#dialog{max-height:calc(var(--view-height,100dvh) - 44px);overflow:auto;bottom:auto;top:calc(var(--view-top,0px) + var(--view-height,100dvh) - min(45vh,280px));max-height:min(45vh,280px)}#dialog .dname{position:static;display:inline-block}#dialog .dnext{color:#f2c14e;background:#1d2440;border:2px solid #f4f1e6;min-height:44px;width:100%;font:inherit}#panel,#title,#ending{top:var(--view-top,0px);height:var(--view-height,100dvh);bottom:auto}#panel .sheet{width:100%;box-sizing:border-box}#panel-close{background:#1d2440}#title .card{box-sizing:border-box}#text-open{min-height:44px;width:100%;margin-top:12px}#mission-open{max-width:120px} .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-height:450px){#dialog{top:calc(var(--view-top,0px) + 12px);max-height:calc(var(--view-height,100dvh) - 24px)}#title-sprite{width:54px;height:72px}#title h1{font-size:22px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style></head><body>
+<canvas id="game" tabindex="0" aria-label="도토리 숲 마을"></canvas>
+<div id="hud" class="ui box px"><div class="row"><span class="pill"><i class="acorn"></i> <span id="hud-score">0</span></span><span class="bonus" id="hud-bonus" hidden></span><span id="hud-step"></span></div><div id="hud-obj"></div></div>
+<div id="mapbox" class="ui"><canvas id="minimap" aria-label="미니맵"></canvas><div class="btns"><button id="btn-glossary" class="box px" type="button" aria-label="용어 도감">📖 <span id="hud-terms">0/10</span></button><button id="btn-shop" class="box px" type="button" aria-label="도토리 상점">🛒</button><button id="btn-sfx" class="box px" type="button" aria-label="효과음">🔊</button><button id="btn-bgm" class="box px" type="button" aria-label="배경음악">🎵</button></div></div>
+<div id="joy" class="ui" hidden><div id="knob"></div></div>
+<button id="run" class="ui box px" type="button" hidden>달리기</button>
+<button id="act" class="ui box px" type="button" hidden></button>
+<div id="hint" class="ui box px" hidden>WASD·방향키 이동 · Shift 달리기 · E/스페이스 말 걸기</div>
+<div id="dialog" class="ui box px" hidden role="dialog" aria-label="마을 대화"><div class="dname"></div><div class="dtext"></div><div class="choices" hidden></div><button type="button" class="dnext">▼ 눌러서 계속</button></div>
+<div id="toast" class="ui box px" role="status"></div>
+<div id="fade"></div>
+<div id="panel" hidden><div class="sheet"><button id="panel-close" class="box px" type="button">✕ 돌아가기</button><main id="darami-app"></main></div></div>
+<div id="title" class="px"><div class="card box"><canvas id="title-sprite" width="18" height="24"></canvas><p class="kicker">스무 살, 첫 돈 공부</p><h1>다람이의<br>도토리 숲</h1><ul id="title-help"></ul><button id="title-go" class="box px" type="button">숲으로 들어가기</button><p class="small">진행 상황은 이 브라우저에 자동 저장돼요.</p></div></div>
+<div id="ending" class="px" hidden><div class="card box"><p class="kicker">10년 후…</p><div id="end-body" hidden><canvas id="end-scene" width="240" height="140" aria-label="10년 뒤 마을 모습"></canvas><h2 id="end-title"></h2><p id="end-rate"></p><p id="end-text"></p><p id="end-next"></p><button id="end-cert" class="box px" type="button">수료증 보기</button><button id="end-edit" class="box px" type="button">계획 고치기</button></div></div></div>
+<div id="fail" class="px" hidden><div class="card box"><h2>게임을 열 수 없어요</h2><p class="small">브라우저가 너무 오래되었을 수 있어요. 최신 크롬이나 사파리로 다시 열어 주세요.</p></div></div>
+<script>window.addEventListener('error',function(){if(!window.__daraDot)document.getElementById('fail').hidden=false;});</script>
+<script>
+(()=>{'use strict';
+/* ================= 원본 계산·미션 로직 (2D 버전과 동일) ================= */
+/* 계산 함수: 모든 금액은 원. 공제·이자는 계산 단계별 원 미만 버림. */
+const floor=n=>Math.floor(n+1e-8);
+const Assumptions=Object.freeze({asOf:'2026-11-02',pension:.05,health:.03595,care:.139,employment:.009,hourly:10700,interestTax:.154,savingRate:.05,futureRate:3,debtRate:18});
+const MODEL_NOTE='1년·3년·10년 목표를 동시에 별도로 준비합니다. 목표 완료 후 재배분은 계산하지 않습니다. 카드·돌발 사건 비용은 기본 장기 전망에 자동 반영되지 않습니다.';
+const MISSION_SCORE=Object.freeze({correct:20,review:10,budget:20,card:[15,15,5,20]});
+const Calc={
+ tax(g){const a=[[1060000,0],[2000000,19800],[2500000,30000],[3000000,70000]];if(g<=a[0][0])return 0;if(g>3000000)throw Error('수업의 소득세 범위는 월 300만원 이하입니다.');for(let i=1;i<a.length;i++)if(g<=a[i][0])return floor(a[i-1][1]+(g-a[i-1][0])*(a[i][1]-a[i-1][1])/(a[i][0]-a[i-1][0]));},
+ payroll(g){let health=floor(g*Assumptions.health),income=this.tax(g);let rows=[['국민연금 근로자 부담 5%',floor(g*Assumptions.pension)],['건강보험 근로자 부담 3.595%',health],['장기요양 13.90% × 건강보험료',floor(health*Assumptions.care)],['고용보험 근로자 부담 0.9%',floor(g*Assumptions.employment)],['근로소득세 · 근사치',income],['지방소득세 · 근사치',floor(income/10)]];let total=rows.reduce((s,r)=>s+r[1],0);return {gross:g,rows,total,net:g-total};},
+ grossStudent(){return floor(Assumptions.hourly*18*4345/1000);},
+ installment(m){let gross=floor(m*Assumptions.savingRate*78/12),tax=floor(gross*Assumptions.interestTax);return {gross,tax,net:gross-tax};},
+ future(m,r,months=120){let balance=0;for(let k=0;k<months;k++)balance+=floor(balance*r/1200)+m;let principal=m*months,interest=balance-principal,tax=floor(interest*Assumptions.interestTax);return {principal,gross:balance,interest,tax,net:balance-tax};},
+ revolving(price=600000){let b=price,paid=0,rows=[];for(let k=1;k<=240 && b>0;k++){let interest=floor(b*Assumptions.debtRate/1200),bill=b+interest,payment=bill<=10000?bill:Math.ceil(bill*.1);b=bill-payment;paid+=payment;rows.push({month:k,interest,payment,balance:b,paid});}return {rows,total:paid,months:rows.length,six:rows[5]};},
+ loan(p,months=12){let b=p,total=0;let principal=Math.ceil(p/months);for(let k=0;k<months;k++){let interest=floor(b*Assumptions.debtRate/1200),pay=Math.min(b,principal);total+=pay+interest;b-=pay;}return {principal:p,total,interest:total-p};},
+ goal(amount,months){return Math.ceil(amount/months);}
+};
+const names=['시작','첫 월급 명세서','예산 나누기','적금의 진실','복리 마법','주식 첫걸음','카드의 유혹','돌발 상황','10년 뒤 다람이','나의 재무계획서'];
+const LAST=names.length-1;
+const cats=['주거','통신','교통','식비','여가·쇼핑','저축','비상금'];
+const root=document.getElementById('darami-app'),KEY='darami-economath-dot6-v3',PREV_KEY='darami-economath-dot5-v2';
+/* 주식 바구니 실험: 가상 회사와 가상 1년 수익률(%). 실제 종목·시장 자료가 아님 */
+const STOCKS=Object.freeze([['도토리푸드',36],['숲속전자',14],['다람택배',6],['솔방울에너지',-6],['버섯제약',-30]]);
+const won=n=>Math.round(n).toLocaleString('ko-KR')+'원',esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initial=()=>({version:3,step:0,name:'',career:'job',budget:[0,50000,80000,300000,200000,300000,0],housing:0,rewards:{},records:{},answers:{},goals:[{title:'',amount:0,months:12},{title:'',amount:0,months:36},{title:'',amount:0,months:120}],rules:[],customRule:'',pledge:'',chartRate:3,chartMonthly:300000,terms:[],bonus:{},playSec:0,golden:[],shop:{owned:[],scarf:null,hat:null},retry:{}});
+/* Storage boundary: whitelist, bounds, fixed periods and cross-field progress. */
+let state=initial(),storageOK=true,saveBlocked=false,saveNotice='',pendingSave=null;
+const LEGACY_KEY='darami-economath-dot4-v1';
+function validateSave(s){
+ const obj=v=>v!==null&&typeof v==='object'&&!Array.isArray(v),num=(v,a,b)=>Number.isFinite(v)&&v>=a&&v<=b,int=(v,a,b)=>Number.isInteger(v)&&num(v,a,b),str=(v,n)=>typeof v==='string'&&v.length<=n;
+ const assert=(v,k)=>{if(!v)throw Error(k);};
+ assert(obj(s),'저장 형식');assert([1,2,3].includes(s.version),'지원하지 않는 저장 버전');
+ /* 버전 3에서 5단계 '주식 첫걸음'이 들어가며 카드 이후 단계 번호가 1씩 밀림 */
+ const v3=s.version===3,last=v3?9:8,order=v3?['','payroll','budget','saving','compound','stock','card','emergency','future']:['','payroll','budget','saving','compound','card','emergency','future'],cardStep=String(order.indexOf('card')),n=order.length-1;
+ assert(int(s.step,0,last),'단계');
+ const keys=['version','step','name','career','budget','housing','rewards','records','answers','goals','rules','customRule','pledge','chartRate','chartMonthly','terms','bonus','playSec','golden','shop','retry','guess','revealed','savingOptions','event','complete','finishedAt','firstSaving','retryAnswers','stockPick','resumeStep'];
+ assert(Object.keys(s).every(k=>keys.includes(k)),'알 수 없는 필드');
+ for(const [k,n] of Object.entries({name:20,customRule:100,pledge:140}))assert(str(s[k],n),k);
+ assert(['job','student'].includes(s.career),'진로');assert(Array.isArray(s.budget)&&s.budget.length===7&&s.budget.every(v=>int(v,0,3000000)),'월 예산');assert(int(s.housing,0,3000000),'주거');
+ assert(Array.isArray(s.goals)&&s.goals.length===3&&s.goals.every((g,i)=>obj(g)&&Object.keys(g).every(k=>['title','amount','months'].includes(k))&&str(g.title,60)&&int(g.amount,0,1e9)&&g.months===[12,36,120][i]),'목표');
+ const ids=(v,max)=>Array.isArray(v)&&v.length<=max+1&&new Set(v).size===v.length&&v.every(x=>int(x,0,max));
+ assert(ids(s.rules,3),'원칙');assert(ids(s.terms,10),'용어');assert(ids(s.golden,7),'황금 도토리');
+ assert(num(s.chartRate,0,8)&&s.chartRate*2%1===0&&int(s.chartMonthly,0,3000000),'그래프');assert(num(s.playSec,0,31536000),'시간');
+ const quiz={payroll:3,budget:0,saving:4,compound:3,card:4,emergency:3,future:3,...(v3?{stock:3}:{})};
+ assert(obj(s.answers)&&Object.entries(s.answers).every(([k,v])=>k in quiz&&(k==='budget'?v===true:int(v,0,quiz[k]-1))),'첫 응답');
+ const stepKey=k=>/^\d$/.test(k)&&+k>=1&&+k<=n;
+ assert(obj(s.rewards)&&Object.entries(s.rewards).every(([k,v])=>stepKey(k)&&(k==='2'?v===20:k===cardStep?[5,15,20].includes(v):[10,20].includes(v))),'보상');
+ assert(obj(s.records)&&Object.entries(s.records).every(([k,v])=>stepKey(k)&&obj(v)&&Object.keys(v).every(x=>['choice','result'].includes(x))&&str(v.choice,200)&&str(v.result,500)),'첫 선택 기록');
+ /* resumeStep: 5차 저장을 가져와 주식 단계만 먼저 하고 원래 진행 위치로 돌아갈 때 */
+ if(s.resumeStep!==undefined)assert(v3&&s.step===5&&int(s.resumeStep,6,9),'복귀 단계');
+ for(let i=1;i<=n;i++){const answered=s.answers[order[i]]!==undefined,at=s.resumeStep!==undefined&&order[i]!=='stock'?s.resumeStep:s.step;assert(answered===(s.rewards[i]!==undefined)&&answered===(s.records[i]!==undefined),'응답·보상·기록 불일치');if(at>i)assert(answered,'완료 전 단계 누락');if(i>at)assert(!answered,'미래 단계 응답');}
+ if(s.stockPick!==undefined)assert(int(s.stockPick,0,STOCKS.length-1)&&s.answers.stock!==undefined,'주식 바구니 선택');
+ assert(obj(s.bonus)&&Object.entries(s.bonus).every(([k,v])=>/^[0-6]$/.test(k)&&typeof v==='boolean'),'보너스');
+ assert(obj(s.retry)&&Object.entries(s.retry).every(([k,v])=>['payroll','saving','compound','stock','emergency','future'].includes(k)&&['ok','no'].includes(v)&&s.answers[k]!==undefined),'재도전');
+ if(s.retryAnswers!==undefined)assert(obj(s.retryAnswers)&&Object.entries(s.retryAnswers).every(([k,v])=>Object.hasOwn(s.retry,k)&&int(v,0,2)),'재도전 선택');
+ const items={'sc-blue':10,'sc-red':10,'sc-purple':15,'hat-straw':15,'hat-beret':20,'hat-crown':40};
+ assert(obj(s.shop)&&Object.keys(s.shop).every(k=>['owned','scarf','hat'].includes(k))&&Array.isArray(s.shop.owned)&&s.shop.owned.length<=6&&new Set(s.shop.owned).size===s.shop.owned.length&&s.shop.owned.every(k=>Object.hasOwn(items,k)),'상점 소유');
+ for(const slot of ['scarf','hat'])assert(s.shop[slot]===null||(s.shop.owned.includes(s.shop[slot])&&s.shop[slot].startsWith(slot==='hat'?'hat-':'sc-')),'착용');
+ assert(s.shop.owned.reduce((a,k)=>a+items[k],0)<=(s.golden.length+Object.values(s.bonus).filter(Boolean).length)*5,'상점 잔액');
+ for(const k of ['revealed','complete'])if(s[k]!==undefined)assert(typeof s[k]==='boolean',k);
+ if(s.guess!==undefined)assert(int(s.guess,0,3000000),'월급 예상');if(s.firstSaving!==undefined)assert(int(s.firstSaving,0,3000000),'첫 저축액');
+ if(s.savingOptions!==undefined)assert(Array.isArray(s.savingOptions)&&s.savingOptions.length===4&&s.savingOptions.every(v=>int(v,0,1e9)),'적금 보기');
+ if(s.finishedAt!==undefined)assert(str(s.finishedAt,50),'수료일');
+ if(s.event!==undefined)assert(obj(s.event)&&Object.keys(s.event).every(k=>['name','cost'].includes(k))&&[['폰 액정 수리',300000],['사랑니 치료',250000],['노트북 수리',450000]].some(([n,c])=>s.event.name===n&&s.event.cost===c),'돌발 사건');
+ if(s.answers.emergency!==undefined)assert(s.event!==undefined,'돌발 사건 누락');
+ if(s.complete){assert(s.step===last&&s.goals.every(g=>g.title.trim()&&g.amount>0)&&s.rules.length+(s.customRule.trim()?1:0)===3&&s.pledge.trim(),'완료 조건');if(s.version>=2)assert(s.budget.reduce((a,b)=>a+b,0)===Calc.payroll(s.career==='job'?2500000:Calc.grossStudent()).net,'완료 예산 합계');}
+ return JSON.parse(JSON.stringify(s));
+}
+function migrateSave(s){const v=validateSave(s);if(v.version===1){const gross=v.career==='job'?2500000:Calc.grossStudent(),h=floor(gross*.03595),oldNet=gross-floor(gross*.05)-h-floor(h*.1314)-floor(gross*.009)-Calc.tax(gross)-floor(Calc.tax(gross)/10);v.budget[6]+=oldNet%10000;v.version=2;v.complete=false;v.firstSaving=v.budget[5];}
+ /* 2→3: 카드 이후 기록을 한 칸씩 밀고, 이미 지나간 학생은 주식 단계를 먼저 한 뒤 원래 위치로 복귀 */
+ if(v.version===2){const shift=o=>Object.fromEntries(Object.entries(o).map(([k,x])=>[+k>=5?+k+1:+k,x]));v.rewards=shift(v.rewards);v.records=shift(v.records);if(v.step>=5){v.resumeStep=v.step+1;v.step=5;v.complete=false;}v.version=3;}
+ const n=Calc.payroll(v.career==='job'?2500000:Calc.grossStudent()).net;if(v.step>=3&&v.budget.reduce((a,b)=>a+b,0)!==n){v.complete=false;}return validateSave(v);}
+try{const raw=localStorage.getItem(KEY),prev=raw?null:localStorage.getItem(PREV_KEY),old=raw||prev?null:localStorage.getItem(LEGACY_KEY);if(raw||prev||old){try{const parsed=JSON.parse(raw||prev||old);const checked=migrateSave(parsed);if(prev||old){pendingSave=checked;saveBlocked=true;saveNotice=(prev?'5차':'4차')+' 저장을 발견했습니다. 원본을 보존하고 6차로 가져올 수 있습니다. 새로 생긴 \'주식 첫걸음\' 미션을 먼저 하고 원래 진행 위치로 돌아갑니다.'+(old?' 보험료 변경 후 현재 예산을 계획서에서 다시 맞춰 주세요.':'');}else{state=checked;}}catch(e){saveBlocked=true;saveNotice='저장 데이터를 읽을 수 없습니다 ('+e.message+'). 원본 저장은 유지됩니다. 새 학생으로 시작하면 이 게임의 이전 저장도 삭제됩니다.';}}}catch(e){storageOK=false;}
+function persist(){if(saveBlocked)return;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){storageOK=false;}}
+function deleteSaves(){try{for(const k of [KEY,PREV_KEY,LEGACY_KEY,'darami-dot4-sound'])localStorage.removeItem(k);}catch(e){storageOK=false;}}
+
+function net(){return Calc.payroll(state.career==='job'?2500000:Calc.grossStudent()).net;}
+function remainder(){return net()%10000;}
+function amounts(){return [...state.budget];}
+function sum(a){return a.reduce((x,y)=>x+y,0);}
+function scoreTitle(score){return score>=135?'개념 연결 탐험가':score>=115?'개념 성장 탐험가':'개념 연습 탐험가';}
+function totalScore(){return sum(Object.values(state.rewards));}
+function mascot(sad=false){return `<svg class="mascot" viewBox="0 0 200 165" role="img" aria-label="${sad?'고민하는':'기쁜'} 다람이"><path d="M134 140C215 151 204 31 162 38C129 42 148 84 171 67C188 114 153 112 133 108" fill="#bd875a"/><ellipse cx="93" cy="119" rx="48" ry="41" fill="#c78f5e"/><ellipse cx="94" cy="126" rx="28" ry="29" fill="#f8dfb8"/><path d="M51 53L53 12L81 37M106 34L130 12L135 60" fill="#bf8657" stroke="#bf8657" stroke-width="8" stroke-linejoin="round"/><ellipse cx="92" cy="68" rx="51" ry="44" fill="#d7a575"/><path d="M91 27L84 50L97 57L103 28" fill="#f4d6a8"/><ellipse cx="71" cy="65" rx="5" ry="7" fill="#3d392c"/><ellipse cx="113" cy="65" rx="5" ry="7" fill="#3d392c"/><ellipse cx="92" cy="84" rx="26" ry="18" fill="#f8dfb8"/><path d="M87 77Q92 73 97 77L92 83Z" fill="#614832"/><path d="${sad?'M82 96Q92 85 102 96':'M81 89Q92 103 103 89'}" fill="none" stroke="#614832" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="83" r="8" fill="#e8ab93"/><circle cx="123" cy="83" r="8" fill="#e8ab93"/><path d="M79 123Q93 107 107 123L103 143Q92 155 82 143Z" fill="#98704c"/><path d="M77 122Q92 109 109 122L108 128H78Z" fill="#5b6e45"/><path d="M91 113L94 106" stroke="#5b6e45" stroke-width="4"/></svg>`;}
+function button(text,action,primary=false){return `<button type="button" ${primary?'class="primary"':''} data-action="${action}">${text}</button>`;}
+function header(){return `<div class="top"><span class="kicker">도토리 재무일기</span><span class="badge">도토리 ${totalScore()}개</span></div><div class="progress" aria-label="진행 ${state.step}/${LAST}"><i style="width:${state.step/LAST*100}%"></i></div>${state.step?`<p class="small">${state.step} / ${LAST} ·${esc(state.name)}의 선택</p><h2>${names[state.step]}</h2>`:''}`;}
+function explanation(lines,points){return `<section class="note" aria-live="polite"><h3>다람이의 발견</h3>${lines.map(t=>`<div>${t}</div>`).join('')}<p class="amount">이번 단계 도토리 +${points}개</p></section>`;}
+function earn(points,choice,result){let n=state.step;if(state.rewards[n]===undefined){state.rewards[n]=points;state.records[n]={choice,result};onEarn(points);}persist();}
+/* 틀린 미션의 재도전: 숫자를 바꾼 문제 1회. 도토리·수료증은 첫 답 기준 그대로 */
+const RETRY_KEY={1:'payroll',3:'saving',4:'compound',5:'stock',7:'emergency',8:'future'};
+const RETRY={
+ payroll:{q:'모두 개근했을 때, 주휴수당 요건을 충족할 수 있는 사람은?',c:['주 10시간 일하는 다람','주 16시간 일하는 다람','주 12시간 일하는 다람'],a:1,e:'1주 소정근로시간이 15시간 이상이어야 해요.'},
+ saving:{q:'매월 초 100,000원씩 연 4% 단리 적금에 12개월 넣으면 세전 이자는?',c:['4,000원','26,000원','48,000원'],a:1,e:'100,000 × 0.04 × 78 ÷ 12 = 26,000원이에요.'},
+ compound:{q:'연 8% 복리라면, 72의 법칙으로 돈이 2배가 되는 데 대략 몇 년일까요?',c:['8년','9년','64년'],a:1,e:'72 ÷ 8 = 9년이에요.'},
+ stock:{q:'도토리 200개로 산 주식이 첫해 20% 오르고 다음 해 20% 떨어지면 2년 뒤 도토리는?',c:['200개','192개','160개'],a:1,e:'200 × 1.2 × 0.8 = 192개. 같은 비율로 오르고 내려도 원래대로 돌아오지 않아요. 수익률은 곱해서 계산해요.'},
+ emergency:{q:'다음 중 파킹통장에 넣기 가장 어울리는 돈은?',c:['10년 동안 쓰지 않을 돈','갑자기 쓸 수도 있는 예비금','높은 수익이 보장된 투자금'],a:1,e:'수시로 꺼낼 수 있어서 비상금 같은 예비금에 어울려요.'},
+ future:{q:'복리에 대한 설명으로 옳은 것은?',c:['이자에는 이자가 붙지 않는다','수익률은 언제나 보장된다','이자가 원금에 더해져 다시 이자가 붙는다'],a:2,e:'이자에도 이자가 붙는 것이 복리예요. 수익률은 보장되지 않아요.'}
+};
+const correctOf=key=>({payroll:1,saving:(state.firstSaving??amounts()[5])===0?0:1,compound:1,stock:1,emergency:0,future:0})[key];
+function nextButton(){const go=button(state.step===LAST-1?'미션 완료! 다람이 집 가는 길 열기':'미션 완료! 다음 길 열기','next',true),key=RETRY_KEY[state.step];
+ if(!key||state.answers[key]===correctOf(key))return go;
+ const r=RETRY[key],st=state.retry[key];
+ if(!st)return `<section class="panel"><h3>비슷한 문제로 한 번 더!</h3><p>${esc(r.q)}</p><p class="small">도토리 점수는 첫 답으로 정해져 있어요. 이해했는지 확인해 봐요.</p><div class="choices">${r.c.map((x,i)=>`<button type="button" data-retry="${key}" data-index="${i}">${esc(x)}</button>`).join('')}</div></section>`;
+ return `<section class="note"><h3>${st==='ok'?'✓ 재도전 성공!':'한 번 더 살펴봐요'}</h3><p>${esc(r.e)}</p></section>${go}`;}
+function qButtons(options,key){return `<div class="choices">${options.map((x,i)=>`<button type="button" data-quiz="${key}" data-index="${i}">${esc(x)}</button>`).join('')}</div>`;}
+function receipt(p){return `<table><tbody><tr><th>세전 월급</th><td>${won(p.gross)}</td></tr>${p.rows.map(r=>`<tr><td>${r[0]}</td><td>${won(r[1])}</td></tr>`).join('')}<tr><th>공제 합계</th><td>${won(p.total)}</td></tr><tr><th>실수령액</th><td><strong>${won(p.net)}</strong></td></tr></tbody></table><p class="small">항목별 원 미만 버림. 소득세·지방소득세는 실제 간이세액표가 아닌 교육용 보간 모델. 산재보험은 사업주 부담입니다.</p>`;}
+function start(){return `<div class="hero">${mascot()}<p class="kicker">스무 살, 첫 돈 공부</p><h1>작은 도토리가<br>10년 뒤의 나에게</h1><p>월급부터 첫 저축까지.<br>다람이와 함께 내 돈의 길을 정해 봐요.</p></div><label for="nickname">게임에서 쓸 별명</label><input id="nickname" maxlength="20" placeholder="예: 알뜰 다람" value="${esc(state.name)}"><p class="small">실명 대신 별명을 써요. 약 25~35분 · 계산기 사용 가능</p><div class="choices"><button data-career="job"><strong>취업 다람</strong>세전 월급 2,500,000원</button><button data-career="student"><strong>대학생 다람</strong>주 15시간 알바 + 주휴수당 3시간분<br>주급 192,600원 × 4.345 = 월 ${won(Calc.grossStudent())}</button></div><p class="small">수업용 2027년 가정: 최저시급 10,700원, 주 40시간 월 환산 2,236,300원(209시간). 학생 진로는 보험 가입 조건을 생략하고 같은 근로자 부담 보험료율을 적용한 비교 모델입니다.</p>`;}
+function payroll(){let p=Calc.payroll(state.career==='job'?2500000:Calc.grossStudent());if(state.answers.payroll!==undefined)return receipt(p)+explanation([`내 예상 ${won(state.guess||0)} → 교육용 추정 ${won(p.net)}.`,`공제액 = 세전 월급 × 각 항목의 비율. 장기요양은 건강보험료가 기준이에요.`,`주휴수당은 주 소정근로시간 15시간 이상, 소정근로일 개근 등 요건을 충족할 때 받아요.`,`주 15시간 알바의 수업용 주휴시간은 3시간: 10,700 × (15＋3).`],state.rewards[1])+nextButton();return `<p>세전 ${won(p.gross)}, 통장에는 얼마나 들어올까요?</p><label for="guess">예상 실수령액 <strong id="guess-value">${won(state.guess??floor(p.gross*.9/10000)*10000)}</strong></label><input id="guess" type="range" min="0" max="${p.gross}" step="10000" value="${state.guess??floor(p.gross*.9/10000)*10000}">${state.revealed?receipt(p):button('명세서 열기','reveal',true)}${state.revealed?`<h3>주휴수당, 언제 받을까요?</h3>${qButtons(['한 시간만 일해도 무조건 받는다','주 15시간 이상 + 개근 등 지급 요건을 충족한다','주 40시간인 사람만 받는다'],'payroll')}`:''}`;}
+function ratioBars(){let a=amounts(),v=[sum(a.slice(0,4)),a[4],a[5]+a[6]],pct=v.map(x=>x/net()*100);return `<div class="legend"><span><i class="need"></i>필요</span><span><i class="want"></i>욕구</span><span><i class="save"></i>저축·비상금</span></div><p class="small">내 예산 ${pct.map(x=>x.toFixed(1)+'%').join(' / ')}</p><div class="bar">${pct.map((x,i)=>`<span class="${['need','want','save'][i]}" style="width:${Math.max(0,x)}%"></span>`).join('')}</div><p class="small">참고 기준 50% / 30% / 20%</p><div class="bar"><span class="need" style="width:50%"></span><span class="want" style="width:30%"></span><span class="save" style="width:20%"></span></div>`;}
+function budgetEditor(){return '<p>교육용 추정 실수령액 '+won(net())+'을 배분해요. 원 단위 직접 입력과 ±1만 원 조절이 가능합니다.</p><div class="panel">'+cats.map((c,i)=>`<label for="budget-${i}">${c} (원)</label><input id="budget-${i}" data-budget="${i}" type="number" min="0" max="${net()}" step="1" value="${state.budget[i]}"><div class="budget-tools"><button type="button" data-adjust="${i}" data-delta="-10000" aria-label="${c} 1만 원 줄이기">−1만 원</button><button type="button" data-adjust="${i}" data-delta="10000" aria-label="${c} 1만 원 늘리기">+1만 원</button><button type="button" data-fill="${i}">남은 금액을 ${c}에</button></div>`).join('')+'</div><div id="budget-live" role="status"></div>';}
+function budget(){if(state.answers.budget!==undefined)return budgetTable()+ratioBars()+explanation(['첫 예산 선택 기록은 보존되며 마지막 계획서에서 현재 예산을 수정할 수 있어요.'],state.rewards[2])+nextButton();return budgetEditor()+button('배분 완료','budget-done',true);}
+function updateBudget(){let left=net()-sum(amounts()),el=root.querySelector('#budget-live');if(el)el.innerHTML=`<p class="${left<0?'error':'amount'}">${left<0?'초과':'남은 돈'} ${won(Math.abs(left))}</p>${ratioBars()}`;let b=root.querySelector('[data-action="budget-done"]');if(b)b.disabled=left!==0;}
+function saving(){let m=amounts()[5],r=Calc.installment(m);if(state.answers.saving!==undefined)return explanation([`매월 초 ${won(m)}씩 12개월: 세전 이자 ${won(r.gross)}.`,`이자 = ${m.toLocaleString()} × 0.05 × (1＋…＋12) ÷ 12.`,`등차수열의 합 12 × 13 ÷ 2 = 78. 각 납입금의 운용 기간이 달라요.`,`이자소득세 ${won(r.tax)}를 빼면 세후 이자 ${won(r.net)}.`],state.rewards[3])+nextButton();let vals=m===0?[0,15000,30000,97500]:[floor(m*.05*12),r.gross,floor(m*.05),r.net];state.savingOptions=vals;return `<p>매월 초 <strong>${won(m)}</strong>씩 연 5% 단리 적금에 12개월 넣으면 세전 이자는?</p><p class="small">첫 납입금 12개월, 마지막 납입금 1개월 운용. ${m===0?'저축이 0원이면 이자도 0원입니다.':''}</p>${qButtons(vals.map(won),'saving')}`;}
+function graph(){let m=state.chartMonthly,r=state.chartRate,values=Array.from({length:11},(_,y)=>Calc.future(m,r,y*12));let W=500,H=245,L=65,T=22,B=40,R=20,max=Math.max(1,values[10].net);let x=y=>L+y*(W-L-R)/10,y=v=>H-B-v/max*(H-T-B);let path=key=>values.map((v,i)=>(i?'L':'M')+x(i)+','+y(v[key])).join(' ');return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="10년 저축 비교. 그냥 모으기 ${won(values[10].principal)}, 세후 복리 ${won(values[10].net)}" style="width:100%;height:auto"><text x="6" y="16" font-size="13" fill="#35433c">금액 (만원)</text>${[0,.5,1].map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(max*v)}" y2="${y(max*v)}" stroke="#dee5d8"/><text x="${L-8}" y="${y(max*v)+4}" text-anchor="end" font-size="13" fill="#35433c">${(max*v/10000).toFixed(0)}</text>`).join('')}${[0,5,10].map(v=>`<text x="${x(v)}" y="${H-17}" text-anchor="middle" font-size="14" fill="#35433c">${v}년</text>`).join('')}<path d="${path('principal')}" fill="none" stroke="#b18461" stroke-width="3" stroke-dasharray="6 4"/><path d="${path('net')}" fill="none" stroke="#34654e" stroke-width="4"/></svg><p>점선 · 그냥 모으기 <strong>${won(values[10].principal)}</strong><br>실선 · 세후 복리 <strong>${won(values[10].net)}</strong></p>`;}
+function compound(){if(state.answers.compound===undefined)return `<p>연 6% 복리라면 돈이 2배가 되는 데 대략 몇 년이 걸릴까요?</p>${qButtons(['6년','12년','72년'],'compound')}`;return explanation(['72 ÷ 6 = 약 12년. 실제로는 (1.06)ⁿ = 2를 풀어요.','n = log 2 ÷ log 1.06 ≈ 11.9년: 로그는 지수에 있는 시간을 찾아줘요.','원금 × (1＋r)ⁿ은 등비수열. 이자에도 이자가 붙는 것이 복리예요.','아래 그래프는 매월 말 저축, 연이율÷12로 월 복리, 만기 이자세 15.4%를 가정해요.'],state.rewards[4])+`<label for="chart-monthly">월 저축액 <strong id="chart-monthly-label">${won(state.chartMonthly)}</strong></label><input id="chart-monthly" type="range" min="0" max="${floor(net()/10000)*10000}" step="10000" value="${state.chartMonthly}"><label for="chart-rate">연 수익률 <strong id="chart-rate-label">${state.chartRate}%</strong></label><input id="chart-rate" type="range" min="0" max="8" step="0.5" value="${state.chartRate}"><div id="chart">${graph()}</div><p class="small">그래프 실험값은 실제 예산을 바꾸지 않습니다. 수익률은 수업용 가정이며 매월 이자는 원 미만 버립니다.</p>${nextButton()}`;}
+/* 주식 첫걸음: 기본 개념 → 수익률은 곱한다(기하평균) → 나눠 담기(분산투자) */
+function stockBasics(){return `<section class="panel"><h3>주식 기본 개념 4가지</h3><div class="term"><h3>① 주식은 회사의 작은 조각</h3><p>회사를 아주 많은 조각으로 나눈 것이 주식이에요. 1주를 사면 그 회사의 작은 주인, 곧 주주가 돼요.</p></div><div class="term"><h3>② 돈을 버는 두 가지 방법</h3><p><b>시세차익</b>: 산 값보다 비싸게 팔 때 생기는 이익이에요. 주가 20,000원 × 5주 = 100,000원어치가 주가 10% 상승으로 110,000원이 돼요.<br><b>배당</b>: 회사가 번 이익의 일부를 주주에게 나눠 주는 돈이에요. 주지 않는 회사도 있어요.</p></div><div class="term"><h3>③ 주가는 왜 오르내릴까?</h3><p>회사 실적, 경제 상황, 사람들의 기대가 바뀌면 사려는 사람과 팔려는 사람의 수가 달라져 가격이 움직여요. 내일 가격은 누구도 정확히 알 수 없어요.</p></div><div class="term"><h3>④ 예금·적금과 다른 점</h3><p>예금·적금은 약속된 이자를 주고 예금자보호 제도로 한도 안에서 보호돼요. 주식은 <b>원금이 보장되지 않아요</b>. 산 값보다 떨어진 채 팔면 손실이에요. 기대 수익이 클수록 보통 가격의 흔들림, 곧 위험도 커요.</p></div></section>`;}
+function stockBasket(){const pick=state.stockPick,value=r=>floor(1000000*(100+r)/100),mix=sum(STOCKS.map(([,r])=>floor(200000*(100+r)/100)));
+ if(pick===undefined)return `<section class="panel"><h3>바구니 실험: 한곳에 담을까, 나눠 담을까?</h3><p>가상 회사 5곳 중 <b>한 곳에 100만 원</b>을 모두 넣는다면 어디를 고를까요? 1년 수익률은 고른 뒤에 공개돼요.</p><div class="choices">${STOCKS.map(([name],i)=>`<button type="button" data-pick="${i}">${esc(name)}</button>`).join('')}</div><p class="small">회사 이름과 수익률은 수업용 가상 자료예요. 고른 회사는 도토리 점수와 관계없어요.</p></section>`;
+ const vals=STOCKS.map(([,r])=>value(r)),hi=Math.max(...vals),lo=Math.min(...vals);
+ return `<section class="panel"><h3>바구니 실험 결과 · 1년 뒤</h3><table><thead><tr><th>회사</th><th>수익률</th><th>100만 원 → </th></tr></thead><tbody>${STOCKS.map(([name,r],i)=>`<tr${i===pick?' style="font-weight:700"':''}><td>${i===pick?'▶ ':''}${esc(name)}</td><td>${r>0?'+':r<0?'−':''}${Math.abs(r)}%</td><td>${won(vals[i])}</td></tr>`).join('')}<tr><th>5곳에 20만 원씩 나눠 담기</th><th>${mix>=1000000?'+':''}${((mix-1000000)/10000).toFixed(0)}%</th><th>${won(mix)}</th></tr></tbody></table>${[`내가 고른 ${esc(STOCKS[pick][0])}: ${won(vals[pick])}. 한 곳에 담으면 결과가 최고 ${won(hi)}부터 최저 ${won(lo)}까지, ${won(hi-lo)}나 벌어져요.`,`나눠 담기: 200,000 × (1.36＋1.14＋1.06＋0.94＋0.70) = ${won(mix)}. 수익률의 평균 (36＋14＋6−6−30) ÷ 5 = 4%와 같아요.`,'나눠 담으면 한 회사의 큰 손실을 다른 회사가 메워 결과의 흔들림이 줄어요. 대신 최고 결과도 포기해요.','시장 전체가 떨어지면 나눠 담아도 손실이 날 수 있어요. 분산투자는 위험을 <b>줄이는</b> 방법이지 <b>없애는</b> 방법이 아니에요. 여러 회사를 한 번에 담는 펀드·ETF도 같은 원리예요.'].map(t=>`<p>${t}</p>`).join('')}<div class="note"><h3>투자 전에 확인할 것</h3><div>① 비상금을 먼저 마련했나요? 곧 써야 할 돈은 넣지 않아요.</div><div>② 잃어도 생활이 흔들리지 않는 돈인가요?</div><div>③ '무조건 오른다', '원금 보장 고수익'이라는 말은 의심해요.</div></div></section>`;}
+function stock(){if(state.answers.stock===undefined)return `${stockBasics()}<h3>수익률 퀴즈</h3><p>도토리 100개로 가상 회사 주식을 샀어요. 첫해 주가가 <b>50% 하락</b>하고, 다음 해 <b>50% 상승</b>했다면 2년 뒤 도토리는 몇 개일까요?</p>${qButtons(['100개 · 평균 수익률이 0%니까','75개','125개'],'stock')}`;
+ return `<details><summary>주식 기본 개념 다시 보기</summary>${stockBasics()}</details>${explanation(['100 × 0.5 × 1.5 = 75개. 수익률은 더하지 않고 (1＋수익률)을 곱해요.','−50%와 +50%의 산술평균은 0%지만, 실제 연평균 수익률은 √0.75 − 1 ≈ −13.4%예요. 이것이 기하평균이에요.','반토막 난 뒤 원금을 되찾으려면 +100%가 필요해요: 1 ÷ 0.5 = 2배.','복리 그래프는 수익률이 매년 같다고 가정했어요. 주식 수익률은 해마다 달라서 미래 금액을 보장할 수 없어요.'],state.rewards[5])}${stockBasket()}${state.stockPick===undefined?'':nextButton()}`;}
+function card(){if(state.answers.card===undefined)return `<div class="hero">${mascot()}<h3>마음에 쏙 드는 패딩, 600,000원!</h3></div><p>네 가지 선택의 비용을 비교해 볼까요?</p>${qButtons(['일시불로 산다','6개월 무이자 할부','리볼빙 · 매달 청구액의 10%만 결제','3개월 모아서 산다'],'card')}`;let rv=Calc.revolving();return `<p>나의 선택: <strong>${['일시불','6개월 무이자 할부','리볼빙','3개월 모아서 사기'][state.answers.card]}</strong></p><table><thead><tr><th>방법</th><th>총비용</th><th>6개월 뒤 빚</th></tr></thead><tbody><tr><td>일시불</td><td>600,000원</td><td>0원</td></tr><tr><td>무이자 6개월<br>월 100,000원</td><td>600,000원</td><td>0원</td></tr><tr><td>리볼빙</td><td>${won(rv.total)}<br>${rv.months}개월</td><td>${won(rv.six.balance)}</td></tr><tr><td>3개월 저축<br>월 200,000원</td><td>600,000원</td><td>0원</td></tr></tbody></table><p class="small">리볼빙: 월 이자 = 전월 잔액 × 18% ÷ 12(버림), 결제액 = (잔액＋이자)의 10%(원 단위 올림). 청구액이 1만 원 이하면 전액 상환합니다. 6개월 납부액 ${won(rv.six.paid)}. 추가 구매·수수료·연체 없음. 가상 결제·상환 조건이며 실제 카드사 청구서 재현이 아닙니다. 카드 비용은 기본 장기 전망에 자동 반영되지 않습니다.</p>${explanation(['무이자 할부도 미래 월급에서 빠져나갈 지출이에요.','리볼빙 잔액은 대략 전월 잔액 × 1.015 × 0.9: 비율이 반복돼요.','총비용에는 원금과 이자를 모두 포함해야 해요.','3개월 모으기는 월 20만 원을 마련할 예산 조정이 필요해요.'],state.rewards[6])}${nextButton()}`;}
+function emergency(){if(!state.event){state.event=[{name:'폰 액정 수리',cost:300000},{name:'사랑니 치료',cost:250000},{name:'노트북 수리',cost:450000}][floor(Math.random()*3)];persist();}let e=state.event,reserve=amounts()[6]*3,short=Math.max(0,e.cost-reserve),loan=Calc.loan(short),living=sum(amounts().slice(0,4));if(state.answers.emergency===undefined)return `<div class="hero">${mascot(short>0)}</div><h3>${e.name} ${won(e.cost)}</h3><p>매월 비상금 ${won(amounts()[6])}을 3개월 쌓았다면 ${won(reserve)}!</p><div class="note ${short?'warning':''}">${short?`부족액 ${won(short)}은 연 18%, 12개월 원금균등상환 대출로 가정합니다.<br>예상 이자 ${won(loan.interest)}, 총상환 ${won(loan.total)}.`:'비상금으로 해결! 남은 비상금 '+won(reserve-e.cost)}</div><p class="small">이번 사건의 비상금은 ‘월 비상금 적립액 × 3’입니다. 장기 목표인 ‘생활비 3~6개월분’과 구분해요.</p><h3>파킹통장은 어떤 돈에 어울릴까요?</h3>${qButtons(['갑자기 꺼낼 수 있는 비상금','10년 동안 절대 안 꺼낼 돈만','언제나 최고 수익을 보장하는 투자금'],'emergency')}`;return explanation([`${e.name} ${won(e.cost)}: ${short?'부족액 '+won(short)+' 대출, 총상환 '+won(loan.total):'비상금으로 해결'}.`,`필요 생활비 ${won(living)} 기준 비상금 목표는 ${won(living*3)}~${won(living*6)}.`,`생활비 × 3~6이라는 비율로 비상금 목표를 정해요.`,`파킹통장은 수시 입출금이 가능한 돈 보관용 계좌를 뜻해요. 금리·조건은 확인해야 해요. 카드·돌발 사건 비용은 기본 장기 전망에 자동 반영되지 않습니다.`],state.rewards[7])+nextButton();}
+function future(){let m=amounts()[5],f=Calc.future(m,Assumptions.futureRate),score=totalScore(),title=scoreTitle(score);if(state.answers.future===undefined)return `<p>지금처럼 매달 ${won(m)}씩 10년 저축한다면?</p>${qButtons(['복리는 이자에도 이자가 붙는다','수익률 3%는 언제나 보장된다','비상금과 목표 저축은 같은 돈으로 중복 계산해도 된다'],'future')}`;return `<div class="hero">${mascot()}<span class="badge">${title}</span><h2>10년 뒤의 도토리</h2><p class="amount" style="font-size:30px">${won(f.net)}</p><p>원금 ${won(f.principal)} + 세후 이자 ${won(f.net-f.principal)}</p></div>${explanation(['매월 말 저축, 연 3%를 월 복리로 환산하고 이자세 15.4%를 뺐어요.','반복 저축은 등비수열의 합으로 볼 수 있어요: m × {(1＋i)¹²⁰−1} ÷ i.','실제 계산에서는 매월 이자를 버림하므로 공식값과 조금 달라요.',`이 금액은 목표 저축만의 전망입니다. ${MODEL_NOTE} 비상금은 별도로 관리해야 해요.`],state.rewards[8])}<p class="small">기본 전망: 임금·물가 변화 및 출금 없음. 수익률은 보장되지 않습니다. 사건 지출을 반영하려면 다음 계획서의 월 저축 예산을 현실적으로 조정하세요.</p>${nextButton()}`;}
+function budgetTable(){return `<table><tbody>${cats.map((x,i)=>`<tr><td>${x}</td><td>${won(amounts()[i])}</td></tr>`).join('')}<tr><th>합계</th><td>${won(sum(amounts()))}</td></tr></tbody></table>`;}
+const rules=['월급을 받으면 먼저 저축하기','리볼빙 전에 총비용 계산하기','생활비 3~6개월분 비상금 준비하기','투자는 나눠 담고 원금 손실 가능성 확인하기'];
+function planText(){let g=state.goals.map((g,i)=>`${[1,3,10][i]}년 목표: ${g.title||'(미작성)'} / ${won(g.amount)} / ${g.months}개월 / 월 ${won(Calc.goal(g.amount,g.months))}`);let needed=sum(state.goals.map(g=>Calc.goal(g.amount,g.months)));return ['나의 재무계획서 (수업용 2027년 가정)',`진로: ${state.career==='job'?'취업':'대학생 알바'}`,`세전 월급: ${won(state.career==='job'?2500000:Calc.grossStudent())}`,`월 실수령액: ${won(net())} (소득세 교육용 보간 모델)`,`목표: 현재 자산·이자 제외. ${MODEL_NOTE}`,...g,`월 저축 충족률: ${needed?Math.round(amounts()[5]/needed*100):100}% / 목표 월 저축액 합계: ${won(needed)} / 월 저축 예산: ${won(amounts()[5])} / ${needed<=amounts()[5]?'가능':'조정 필요'}`,'월 예산',...cats.map((c,i)=>`${c}: ${won(amounts()[i])}`),'돈 원칙',...state.rules.map(i=>rules[i]),...(state.customRule.trim()?[state.customRule.trim()]:[]),`다짐: ${state.pledge}`,'10년 저축 전망: '+won(Calc.future(amounts()[5],Assumptions.futureRate).net)+' (매월 말 납입, 연 3%/12 월 복리, 월 이자 버림, 만기 이자세 15.4%, 사건 비용·비상금 제외)','주식 첫걸음: 주식은 원금 보장 없음. −50% 뒤 +50%는 원금의 75%. 가상 회사 5곳에 나눠 담기 +4%'+(state.stockPick!==undefined?` / 한 곳 선택(${STOCKS[state.stockPick][0]}) ${STOCKS[state.stockPick][1]>0?'+':STOCKS[state.stockPick][1]<0?'−':''}${Math.abs(STOCKS[state.stockPick][1])}%`:''),`카드 선택: ${['일시불','6개월 무이자 할부','리볼빙','3개월 모아 사기'][state.answers.card]}`,`돌발 사건: ${state.event?.name||''} ${won(state.event?.cost||0)}`,'소득세·보험료는 수업용 가정이며 실제 제도 확인 필요. 별명과 학번 등 개인정보는 AI에 전달하지 않음.'].join('\n');}
+function plan(){if(state.complete)return `<div class="hero">${mascot()}<h2>내 돈의 첫 지도가 완성됐어요!</h2></div><div class="panel"><pre class="receipt">${esc(planText())}</pre></div>${button('계획서 텍스트 복사','copy',true)}<div id="copy-status" role="status"></div>${button('계획서 다시 편집','edit-plan')}<p class="small">2차시에 학교에서 허용한 AI에 붙여 넣으세요. 실명·학교·계좌번호는 넣지 않아요.</p><details><summary>첫 미션 선택 기록 (현재 계획과 별도)</summary><table><thead><tr><th>단계</th><th>선택·결과</th><th>도토리</th></tr></thead><tbody>${Object.entries(state.records).map(([k,v])=>`<tr><td>${names[k]}</td><td>${esc(v.choice)}<br>${esc(v.result)}</td><td>${state.rewards[k]}</td></tr>`).join('')}</tbody></table></details>`;return `<p>게임에서 정한 예산을 목표와 연결해 보세요.</p><p class="small">목표 월 저축액 = 목표 금액 ÷ 개월 수, 원 미만 올림. 현재 모은 돈과 이자는 제외합니다. ${MODEL_NOTE}</p>${state.goals.map((g,i)=>`<div class="goal"><h3>${[1,3,10][i]}년 뒤 · ${g.months}개월</h3><label for="goal-title-${i}">목표</label><input id="goal-title-${i}" data-goal-title="${i}" maxlength="60" placeholder="예: 독립 준비금" value="${esc(g.title)}"><label for="goal-amount-${i}">필요한 금액 (원)</label><input id="goal-amount-${i}" data-goal-amount="${i}" type="number" min="0" max="1000000000" step="10000" value="${g.amount}"><p id="goal-result-${i}" class="small"></p></div>`).join('')}<div id="goal-total" class="note" aria-live="polite"></div><h3>나의 월 예산 (현재 계획)</h3>${budgetEditor()}<h3>나의 돈 원칙 3가지</h3><p class="small">예시와 직접 입력을 합해 3개를 골라요.</p>${rules.map((r,i)=>`<label class="check"><input type="checkbox" data-rule="${i}" ${state.rules.includes(i)?'checked':''}>${r}</label>`).join('')}<label for="custom-rule">내가 직접 쓴 원칙 1개</label><input id="custom-rule" maxlength="100" value="${esc(state.customRule)}" placeholder="예시 2개 + 나만의 원칙 1개도 좋아요"><label for="pledge">다짐 한 줄</label><input id="pledge" maxlength="140" value="${esc(state.pledge)}"><p id="plan-error" role="alert"></p>${button('내 재무계획서 완성','finish',true)}`;}
+function updateGoals(){let m=amounts()[5],total=0;state.goals.forEach((g,i)=>{let n=Calc.goal(g.amount,g.months);total+=n;let e=root.querySelector('#goal-result-'+i);if(e)e.textContent=`필요한 월 저축액 ${won(n)} · ${n<=m?'개별 목표 가능':'월 저축 예산 초과'}`;});let e=root.querySelector('#goal-total');if(e)e.textContent=`현재 예산의 10년 세후 저축 전망 ${won(Calc.future(m,Assumptions.futureRate).net)}. 세 목표를 동시에 준비하면 월 ${won(total)} / 내 저축 예산 ${won(m)} → ${total<=m?'가능':'목표 금액이나 월 저축 조정 필요'}`;}
+function render(){root.innerHTML=header()+(state.step===LAST&&state.complete?certificate():'')+[start,payroll,budget,saving,compound,stock,card,emergency,future,plan][state.step]()+`${assumptionsHTML()}<footer class="footer">2027년 수업용 가정 · 소득세 교육용 보간 모델 · 보험 가입 조건·상하한 등을 생략한 교육용 추정<br>${storageOK?'진행 상황은 이 브라우저에 자동 저장됩니다. 패널을 닫아도 이어서 할 수 있어요.':'이 환경에서는 저장이 안 되지만 게임은 계속할 수 있습니다.'}${button('새 학생 시작 · 이 게임 데이터 삭제','reset')}</footer>`;updateBudget();updateGoals();persist();refreshHUD();}
+root.addEventListener('input',e=>{let el=e.target;if(el.id==='guess'){state.guess=+el.value;root.querySelector('#guess-value').textContent=won(state.guess);}if(el.dataset.budget!==undefined){let i=+el.dataset.budget;state.budget[i]=Math.min(net(),Math.max(0,Math.floor(Number(el.value)||0)));state.housing=state.budget[0];updateBudget();updateGoals();}if(el.id==='chart-monthly'||el.id==='chart-rate'){if(el.id==='chart-monthly')state.chartMonthly=+el.value;else state.chartRate=+el.value;root.querySelector('#chart-monthly-label').textContent=won(state.chartMonthly);root.querySelector('#chart-rate-label').textContent=state.chartRate+'%';root.querySelector('#chart').innerHTML=graph();}if(el.dataset.goalTitle!==undefined)state.goals[+el.dataset.goalTitle].title=el.value;if(el.dataset.goalAmount!==undefined){state.goals[+el.dataset.goalAmount].amount=Math.min(1e9,Math.max(0,floor(+el.value||0)));updateGoals();}if(el.id==='custom-rule')state.customRule=el.value;if(el.id==='pledge')state.pledge=el.value;persist();});
+root.addEventListener('change',e=>{if(e.target.id==='housing'){state.housing=+e.target.value;state.budget[0]=state.housing;render();}if(e.target.dataset.rule!==undefined){let n=+e.target.dataset.rule;state.rules=e.target.checked?[...new Set([...state.rules,n])]:state.rules.filter(x=>x!==n);persist();}});
+root.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;Snd.play('select');if(b.dataset.career){let name=root.querySelector('#nickname').value.trim();if(!name){root.querySelector('#nickname').focus();return;}state.name=name;state.career=b.dataset.career;let available=net();state.budget=state.career==='job'?[0,50000,80000,400000,300000,800000,0]:[0,30000,50000,200000,100000,200000,0];state.budget[6]=available-sum(state.budget);state.step=1;persist();closePanel();stepChanged();return;}
+if(b.dataset.retry){const key=b.dataset.retry;if(state.retry[key])return;const ok=+b.dataset.index===RETRY[key].a;state.retry[key]=ok?'ok':'no';state.retryAnswers??={};state.retryAnswers[key]=+b.dataset.index;Snd.play(ok?'correct':'wrong');render();return;}
+if(b.dataset.buy){buyItem(b.dataset.buy);return;}
+if(b.dataset.pick!==undefined){if(state.answers.stock===undefined||state.stockPick!==undefined)return;state.stockPick=+b.dataset.pick;Snd.play(STOCKS[state.stockPick][1]>=0?'coin':'wrong');render();return;}
+if(b.dataset.quiz){let key=b.dataset.quiz,i=+b.dataset.index;if(state.answers[key]!==undefined)return;state.answers[key]=i;if(key==='saving')state.firstSaving=amounts()[5];let correct=Object.fromEntries(Object.keys(RETRY).map(k=>[k,correctOf(k)]));let points=key==='card'?MISSION_SCORE.card[i]:(i===correct[key]?MISSION_SCORE.correct:MISSION_SCORE.review);let choices={payroll:['무조건 지급','주 15시간 이상 + 지급 요건','주 40시간만'],saving:(state.savingOptions||[]).map(won),compound:['6년','12년','72년'],stock:['100개','75개','125개'],card:['일시불','무이자 할부','리볼빙','모아서 구매'],emergency:['비상금','장기 자금','수익 보장'],future:['이자에 이자','수익 보장','중복 계산']};earn(points,choices[key][i],key==='card'?'총비용·잔액 비교':i===correct[key]?'정답':'해설로 다시 확인');if(key==='compound')state.chartMonthly=amounts()[5];render();return;}
+if(b.dataset.adjust!==undefined||b.dataset.fill!==undefined){const i=Number(b.dataset.adjust??b.dataset.fill),delta=b.dataset.fill!==undefined?net()-sum(amounts()):Number(b.dataset.delta);state.budget[i]=Math.max(0,Math.min(net(),state.budget[i]+delta));state.housing=state.budget[0];root.querySelector('#budget-'+i).value=state.budget[i];updateBudget();updateGoals();persist();return;}let a=b.dataset.action;if(a==='reveal'){state.guess=+root.querySelector('#guess').value;state.revealed=true;render();}if(a==='budget-done'&&sum(amounts())===net()){state.answers.budget=true;earn(MISSION_SCORE.budget,'7개 항목 예산 배분',`저축 ${won(amounts()[5])} / 비상금 ${won(amounts()[6])}`);render();}if(a==='next'){if(state.resumeStep!==undefined){state.step=state.resumeStep;delete state.resumeStep;}else state.step=Math.min(LAST,state.step+1);persist();closePanel();stepChanged();return;}if(a==='finish'){let count=state.rules.length+(state.customRule.trim()?1:0);let error=sum(amounts())!==net()?'월 예산 합계를 교육용 추정 실수령액과 맞춰 주세요.':state.goals.some(g=>!g.title.trim()||g.amount<=0)?'세 목표의 이름과 0원보다 큰 금액을 입력해 주세요.':count!==3?'돈 원칙을 정확히 3개 선택하거나 작성해 주세요.':!state.pledge.trim()?'다짐 한 줄을 적어 주세요.':'';if(error){root.querySelector('#plan-error').textContent=error;Snd.play('wrong');return;}state.complete=true;persist();closePanel();playEnding();return;}if(a==='ending'){closePanel();playEnding();return;}if(a==='edit-plan'){state.complete=false;render();}if(a==='copy'){let text=planText();try{if(!navigator.clipboard?.writeText)throw Error('fallback');await navigator.clipboard.writeText(text);if(root.querySelector('#copy-status'))root.querySelector('#copy-status').textContent='복사했어요. AI 대화창에 붙여 넣으세요.';}catch(err){if(!root.querySelector('#copy-status'))return;root.querySelector('#copy-status').innerHTML='<p>자동 복사가 제한되어 있어요. 아래 텍스트를 선택해 복사하세요.</p><textarea id="manual-copy" rows="8" readonly aria-label="복사할 재무계획서"></textarea>';let t=root.querySelector('#manual-copy');t.value=text;t.focus();t.select();}}if(a==='reset'){if(!root.querySelector('#reset-confirm')){b.insertAdjacentHTML('afterend','<div id="reset-confirm" class="note warning">저장된 게임과 계획서를 지우고 새로 시작할까요? '+button('새로 시작 확인','reset-confirm')+'</div>');}}if(a==='reset-confirm'){deleteSaves();state=initial();saveBlocked=false;persist();clearInput(true);closePanel();resetWorld();if(textMode)openPanel();}});
+window.DaramiMath=Calc;window.DaramiTest={getState:()=>JSON.parse(JSON.stringify(state)),planText};
+
+/* ================= 소리 (코드로 만든 8비트 효과음·배경음) ================= */
+const Snd={ctx:null,pref:{sfx:true,bgm:true},
+ load(){try{const p=JSON.parse(localStorage.getItem('darami-dot4-sound')||'null');if(p)this.pref={sfx:!!p.sfx,bgm:!!p.bgm};}catch(e){}},
+ save(){try{localStorage.setItem('darami-dot4-sound',JSON.stringify(this.pref));}catch(e){}},
+ init(){if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume();return;}const A=window.AudioContext||window.webkitAudioContext;if(!A)return;this.ctx=new A();this.ctx.resume();this.sfxG=this.ctx.createGain();this.sfxG.gain.value=.4;this.sfxG.connect(this.ctx.destination);this.bgmG=this.ctx.createGain();this.bgmG.gain.value=.2;this.bgmG.connect(this.ctx.destination);this.step=0;this.next=0;setInterval(()=>this.tick(),60);},
+ tone(f,d,type='square',v=.6,slide=0,when=0,out){const c=this.ctx;if(!c)return;const t=c.currentTime+when,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.linearRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(out||this.sfxG);o.start(t);o.stop(t+d+.02);},
+ noise(d,v=.4,when=0,hp=800){const c=this.ctx;if(!c)return;const t=c.currentTime+when,b=c.createBuffer(1,Math.ceil(c.sampleRate*d),c.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=b;f.type='highpass';f.frequency.value=hp;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(g);g.connect(this.sfxG);s.start(t);},
+ play(n){if(!this.ctx||!this.pref.sfx)return;switch(n){
+  case 'step':this.noise(.035,.12,0,2500);break;
+  case 'blip':this.tone(740,.03,'square',.18);break;
+  case 'select':this.tone(660,.05,'square',.3);this.tone(990,.06,'square',.3,0,.05);break;
+  case 'correct':[523,659,784,1047].forEach((f,i)=>this.tone(f,.12,'square',.32,0,i*.07));break;
+  case 'wrong':this.tone(220,.22,'sawtooth',.3,-80);break;
+  case 'coin':this.tone(988,.06,'square',.3);this.tone(1319,.18,'square',.3,0,.06);break;
+  case 'door':this.noise(.18,.25,0,400);this.tone(320,.15,'triangle',.4,-150);break;
+  case 'plank':this.tone(150,.09,'triangle',.7,-40);this.noise(.05,.25,0,300);break;
+  case 'chime':[1047,1319,1568,2093].forEach((f,i)=>this.tone(f,.3,'sine',.3,0,i*.08));break;
+  case 'bump':this.tone(110,.06,'square',.2);break;
+  case 'fanfare':[523,523,523,659,784,659,784,1047].forEach((f,i)=>this.tone(f,i===7?.5:.12,'square',.3,0,[0,.1,.2,.3,.45,.6,.7,.85][i]));break;}},
+ mel:[72,0,76,0,79,0,76,74,72,0,74,76,74,0,0,0,69,0,72,0,76,0,74,72,74,0,72,69,67,0,0,0],bass:[48,55,45,52,41,48,43,43],
+ tick(){if(!this.ctx||!this.pref.bgm)return;const c=this.ctx,dur=60/96/2;if(this.next<c.currentTime)this.next=c.currentTime+.05;while(this.next<c.currentTime+.25){const w=this.next-c.currentTime,s=this.step%32,m=this.mel[s];if(m)this.tone(440*Math.pow(2,(m-69)/12),dur*1.6,'triangle',.5,0,w,this.bgmG);if(s%4===0){const b=this.bass[Math.floor(s/4)];this.tone(440*Math.pow(2,(b-69)/12),dur*3,'square',.22,0,w,this.bgmG);}this.step++;this.next+=dur;}}};
+Snd.load();
+/* 휴대폰은 화면을 만진 뒤에만 소리가 나므로, 첫 터치나 다시 돌아올 때 소리를 깨움 */
+['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{if(Snd.ctx&&Snd.ctx.state!=='running')Snd.ctx.resume();},true));
+
+/* ================= 도트 그리기 도구 ================= */
+const cnv=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+const hex=c=>{c=c.replace('#','');return [parseInt(c.slice(0,2),16),parseInt(c.slice(2,4),16),parseInt(c.slice(4,6),16)];};
+function tone(c,f){const m=v=>Math.max(0,Math.min(255,Math.round(f<0?v*(1+f):v+(255-v)*f)));return '#'+hex(c).map(m).map(v=>v.toString(16).padStart(2,'0')).join('');}
+const P=(x,a,b,c)=>{x.fillStyle=c;x.fillRect(a,b,1,1);};
+const R=(x,a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a,b,w,h);};
+function E(x,cx,cy,rx,ry,c){x.fillStyle=c;for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let X=Math.floor(cx-rx);X<=Math.ceil(cx+rx);X++){const dx=(X+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*dx+dy*dy<=1)x.fillRect(X,y,1,1);}}
+function SE(x,cx,cy,rx,ry,c,hl=true){E(x,cx,cy,rx,ry,tone(c,-.24));E(x,cx-.4,cy-.6,Math.max(.6,rx-.8),Math.max(.6,ry-.9),c);if(hl&&rx>2)E(x,cx-rx*.35,cy-ry*.42,Math.max(.8,rx*.26),Math.max(.6,ry*.18),tone(c,.28));}
+function outline(c,col='#2b1d1a'){const x=c.getContext('2d'),w=c.width,h=c.height,d=x.getImageData(0,0,w,h),a=d.data,o=new Uint8Array(w*h);for(let i=0;i<w*h;i++)o[i]=a[i*4+3]>90?1:0;const [r,g,b]=hex(col);for(let y=0;y<h;y++)for(let X=0;X<w;X++){const i=y*w+X;if(o[i])continue;if((X>0&&o[i-1])||(X<w-1&&o[i+1])||(y>0&&o[i-w])||(y<h-1&&o[i+w])){a[i*4]=r;a[i*4+1]=g;a[i*4+2]=b;a[i*4+3]=255;}}x.putImageData(d,0,0);return c;}
+function flip(c){const o=cnv(c.width,c.height),x=o.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(c,0,0);if(c.smoke)o.smoke=c.smoke;return o;}
+const hash=(a,b,k=0)=>{let h=Math.imul(a|0,374761393)^Math.imul(b|0,668265263)^Math.imul(k|0,1442695041);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296;};
+let seed=2027;const rand=()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+const INK='#2b1d1a';
+
+/* 도토리 아이콘 */
+const ACORN=(()=>{const c=cnv(14,14),x=c.getContext('2d');E(x,7,8.5,4.4,4.6,'#c98a3e');E(x,6,7.5,2,2.5,'#e3ac62');R(x,2,3,10,3,'#7a5030');R(x,3,2,8,1,'#8a6038');R(x,6,0,2,2,'#5a3a20');P(x,4,4,'#9a7048');P(x,8,4,'#9a7048');return outline(c);})();
+document.documentElement.style.setProperty('--acorn',`url(${ACORN.toDataURL()})`);
+
+/* ----- 캐릭터 (18×24, 4방향 × 3프레임) ----- */
+const animals={
+ player:{body:'#c78f5e',belly:'#f8dfb8',head:'#d7a575',ear:'pointy',tail:'squirrel',tailc:'#b67c4c',scarf:'#5b8a45'},
+ kid:{body:'#d9a06a',belly:'#f8dfb8',head:'#e2b585',ear:'pointy',tail:'squirrel',tailc:'#c8915f'},
+ turtle:{body:'#8bbf6a',belly:'#e8e0a8',head:'#9ccc7a',ear:'none',shell:'#4f7d3a',hat:'#6b4a30',tail:'short'},
+ turtle2:{body:'#9cc48a',belly:'#eee6b8',head:'#a8cc96',ear:'none',shell:'#7a8f4a',tail:'short',glasses:1},
+ bear:{body:'#8a5a3b',belly:'#d9b48e',head:'#946342',ear:'round',tail:'short',tie:'#2f4f7f'},
+ rabbit:{body:'#f2eee8',belly:'#ffffff',head:'#f7f3ee',ear:'long',tail:'short',apron:'#e0794a'},
+ owl:{body:'#9a7350',belly:'#e9d6b4',head:'#a37a55',ear:'tuft',beak:'#e0a030',bigEyes:1},
+ owl2:{body:'#8d8f98',belly:'#e2e2e6',head:'#9698a2',ear:'tuft',beak:'#e0a030',bigEyes:1,glasses:1},
+ fox:{body:'#e38a3c',belly:'#fff1e0',head:'#ea9446',ear:'pointy',tail:'fox'},
+ magpie:{body:'#2e3240',belly:'#f4f4f0',head:'#353a48',ear:'none',beak:'#6a6e7c',bigEyes:1,tail:'long',tailc:'#2f5a8a',tie:'#f2c14e'},
+ raccoon:{body:'#8e8a86',belly:'#d8d2ca',head:'#99958f',ear:'round',tail:'ring',mask:1},
+ hedgehog:{body:'#a07850',belly:'#f0d8b8',head:'#e0bf96',ear:'small',spikes:'#6b4a30',tail:'none',tie:'#8b3c26'},
+ duck:{body:'#f6f6f2',belly:'#ffffff',head:'#fbfbf8',ear:'none',beak:'#f0a030',tail:'short',apron:'#91b6a2'},
+ cat:{body:'#9aa0a8',belly:'#eeeeee',head:'#a3a9b1',ear:'pointy',tail:'long'},
+ mole:{body:'#5a5048',belly:'#8a7a6a',head:'#645a51',ear:'none',nose:'#f0a0b0',tail:'none'},
+ deer:{body:'#c9935a',belly:'#f3e0c0',head:'#d29d64',ear:'pointy',antlers:'#7a5a3a',tail:'short'}
+};
+function sym(f){f(X=>X,(X,w)=>X);f(X=>17-X,(X,w)=>18-X-w);}
+function drawEars(x,c,dir){const hc=c.head,front=dir!=='up',pink='#efa2a2';
+ if(c.ear==='pointy')sym((m)=>{[[5,1],[5,2],[6,2],[4,3],[5,3],[6,3],[4,4],[5,4],[6,4],[7,4]].forEach(p=>P(x,m(p[0]),p[1],hc));if(front){P(x,m(5),3,pink);P(x,m(5),2,pink);}});
+ else if(c.ear==='round'){E(x,5,4.4,2,2,hc);E(x,13,4.4,2,2,hc);if(front){P(x,5,4,pink);P(x,12,4,pink);}}
+ else if(c.ear==='small'){E(x,5.5,5,1.4,1.4,hc);E(x,12.5,5,1.4,1.4,hc);}
+ else if(c.ear==='long')sym((m,mr)=>{R(x,mr(6,2),1,2,5,hc);if(front)R(x,m(6),2,1,3,pink);});
+ else if(c.ear==='tuft')sym(m=>{[[3,2],[4,3],[4,4],[5,4]].forEach(p=>P(x,m(p[0]),p[1],hc));});}
+function drawTail(x,c,pos){const tc=c.tailc||c.body;
+ if(c.tail==='squirrel'){if(pos==='back'){SE(x,14,11.5,3.1,5.4,tc);P(x,15,7,tone(tc,.2));}else{SE(x,14.2,12.2,2.9,5.6,tc);P(x,14,8,tone(tc,.25));P(x,13,10,tone(tc,-.15));}}
+ else if(c.tail==='fox'){if(pos==='back'){SE(x,14.4,17.4,2.8,1.9,tc);E(x,16.2,16.8,1.3,1.3,'#ffffff');}else{SE(x,9,19.2,2.2,2.3,tc);E(x,9,20.8,1.4,1.1,'#ffffff');}}
+ else if(c.tail==='ring'){if(pos==='back'){SE(x,14.4,17.4,2.8,1.9,tc);P(x,14,16,'#4a4440');P(x,14,17,'#4a4440');P(x,16,17,'#4a4440');}else{SE(x,9,19.2,2.2,2.3,tc);R(x,7,19,4,1,'#4a4440');}}
+ else if(c.tail==='short'){if(pos!=='back')E(x,9,19.2,1.6,1.4,c.belly);}
+ else if(c.tail==='long'){if(pos==='back')[[13,18],[14,17],[15,16],[15,15],[16,14]].forEach(p=>R(x,p[0],p[1],2,1,tc));else R(x,8,19,2,3,tc);}}
+function charSprite(c,dir,frame){
+ const s=cnv(18,24),x=s.getContext('2d'),side=dir==='left',head=c.head,body=c.body;
+ const lift=frame===1?[1,0]:frame===2?[0,1]:[0,0],arm=frame===1?-1:frame===2?1:0,fc=tone(head,-.32);
+ if(dir!=='up')drawTail(x,c,'back');
+ if(c.spikes&&dir!=='up'){E(x,9,10.5,6.6,6.6,c.spikes);for(let i=0;i<10;i++){const a=Math.PI*(1.05+i*.09);P(x,Math.round(9+Math.cos(a)*7.4),Math.round(10.5+Math.sin(a)*7.4),c.spikes);}}
+ if(side){R(x,6,20-lift[0],3,2,fc);R(x,9,20-lift[1],3,2,fc);}else{R(x,5,20-lift[0],3,2,fc);R(x,10,20-lift[1],3,2,fc);}
+ if(c.shell&&side)SE(x,11.5,15.5,4,4.3,c.shell);
+ SE(x,9,16,side?3.9:4.3,3.7,body,false);
+ if(dir==='down')E(x,9,16.9,2.5,2.4,c.belly);
+ if(side)E(x,7.2,16.9,1.8,2.3,c.belly);
+ if(dir==='up'&&!c.shell)R(x,8,14,2,5,tone(body,-.1));
+ if(c.shell&&dir==='up'){SE(x,9,15.4,5.3,4.9,c.shell);R(x,7,13,4,1,tone(c.shell,-.25));R(x,6,16,6,1,tone(c.shell,-.25));}
+ if(c.shell&&dir==='down'){R(x,3,14,2,5,c.shell);R(x,13,14,2,5,c.shell);}
+ const ac=tone(body,-.12);
+ if(side)E(x,9.5+arm*.6,16.6,1.4,1.8,ac);else{E(x,4.6,16.4+arm,1.3,1.6,ac);E(x,13.4,16.4-arm,1.3,1.6,ac);}
+ if(c.scarf){R(x,5,12,8,2,c.scarf);R(x,5,12,8,1,tone(c.scarf,.2));if(dir==='down')R(x,10,14,2,3,c.scarf);if(side)R(x,11,13,2,3,c.scarf);if(dir==='up')R(x,6,14,2,3,c.scarf);}
+ if(c.tie&&dir==='down')R(x,8,13,2,4,c.tie);
+ if(c.apron){if(dir==='down')R(x,6,15,6,4,c.apron);else if(side)R(x,4,15,4,4,c.apron);}
+ drawEars(x,c,dir);
+ SE(x,side?8.6:9,9,5.3,4.9,head);
+ if(dir==='up'){E(x,9,7.5,2.2,2,tone(head,-.12));}
+ if(c.spikes&&dir==='up'){SE(x,9,11,6.2,7,c.spikes,false);for(let i=0;i<12;i++)P(x,3+i,i%2?3:4,c.spikes);}
+ if(dir==='down'){
+  if(c.mask)R(x,5,8,8,3,'#4a4440');
+  if(c.bigEyes){E(x,6.5,9.5,1.8,1.8,'#ffffff');E(x,11.5,9.5,1.8,1.8,'#ffffff');R(x,6,9,1,2,INK);R(x,11,9,1,2,INK);}
+  else{R(x,6,9,1,2,INK);R(x,11,9,1,2,INK);if(c.mask){P(x,6,8,'#ffffff');P(x,11,8,'#ffffff');}}
+  if(c.beak){R(x,8,11,2,2,c.beak);P(x,8,12,tone(c.beak,-.25));}
+  else{E(x,9,11.7,2.3,1.5,c.belly);R(x,8,11,2,1,c.nose||INK);P(x,4,11,'#e88c8c');P(x,13,11,'#e88c8c');}
+  if(c.glasses){R(x,5,8,3,1,'#3d392c');R(x,10,8,3,1,'#3d392c');R(x,8,9,2,1,'#3d392c');}
+ }else if(side){
+  if(c.mask)R(x,3,8,6,3,'#4a4440');
+  if(c.bigEyes){E(x,5,9.5,1.8,1.8,'#ffffff');R(x,4,9,1,2,INK);}else{R(x,5,9,1,2,INK);if(c.mask)P(x,5,8,'#ffffff');}
+  if(c.beak)R(x,2,11,2,2,c.beak);else{E(x,4.4,11.5,2,1.4,c.belly);P(x,3,11,c.nose||INK);P(x,7,11,'#e88c8c');}
+  if(c.glasses)R(x,4,8,3,1,'#3d392c');
+ }
+ if(c.hat){R(x,6,1,6,3,c.hat);R(x,6,3,6,1,'#b0402c');R(x,4,4,10,1,tone(c.hat,-.15));}
+ if(c.beret){E(x,8.5,4.4,5.8,2.6,c.beret);E(x,7.5,3.6,3,1.2,tone(c.beret,.2));P(x,9,1,tone(c.beret,-.25));}
+ if(c.crown){R(x,5,3,8,2,'#e8b84a');R(x,5,1,2,2,'#e8b84a');R(x,8,1,2,2,'#f2d070');R(x,11,1,2,2,'#e8b84a');P(x,8,4,'#c0303a');P(x,6,4,'#3d6b9e');P(x,11,4,'#3d6b9e');}
+ if(c.antlers)sym(m=>[[6,3],[5,2],[4,1],[6,1],[3,2]].forEach(p=>P(x,m(p[0]),p[1],c.antlers)));
+ if(dir==='up')drawTail(x,c,'front');
+ outline(s);return s;}
+const SPR={};
+for(const k in animals){const t={};['down','up','left'].forEach(d=>t[d]=[0,1,2].map(f=>charSprite(animals[k],d,f)));t.right=t.left.map(flip);SPR[k]=t;}
+/* 상점 물건: 착용하면 다람이 그림을 다시 그림 */
+const SHOP=[
+ {id:'sc-blue',slot:'scarf',name:'파란 목도리',price:10,v:'#3d6b9e'},
+ {id:'sc-red',slot:'scarf',name:'빨간 목도리',price:10,v:'#c8403a'},
+ {id:'sc-purple',slot:'scarf',name:'보라 목도리',price:15,v:'#7a5aa8'},
+ {id:'hat-straw',slot:'hat',name:'밀짚모자',price:15,cfg:{hat:'#d8b850'}},
+ {id:'hat-beret',slot:'hat',name:'빨간 베레모',price:20,cfg:{beret:'#c8403a'}},
+ {id:'hat-crown',slot:'hat',name:'황금 왕관',price:40,cfg:{crown:1}}
+];
+function rebuildPlayer(){const c={...animals.player},s=state.shop,sc=SHOP.find(i=>i.id===s.scarf),h=SHOP.find(i=>i.id===s.hat);if(sc)c.scarf=sc.v;if(h)Object.assign(c,h.cfg);const t={};['down','up','left'].forEach(d=>t[d]=[0,1,2].map(f=>charSprite(c,d,f)));t.right=t.left.map(flip);SPR.player=t;}
+rebuildPlayer();
+const shadowSpr=(()=>{const c=cnv(14,5),x=c.getContext('2d');E(x,7,2.5,6.5,2.2,'rgba(20,30,20,.28)');return c;})();
+
+/* ----- 자연물 ----- */
+function roundTree(base,seedK){const c=cnv(28,34),x=c.getContext('2d');
+ R(x,12,22,4,10,'#7a5030');R(x,12,22,1,10,'#946538');P(x,11,31,'#7a5030');P(x,16,31,'#7a5030');
+ SE(x,14,13,12,10.5,base,false);SE(x,8.5,11,4.6,4,tone(base,.08),false);SE(x,19.5,10,4.6,4,tone(base,.08),false);SE(x,14,6.5,4.8,3.8,tone(base,.16));
+ for(let i=0;i<14;i++)P(x,4+Math.floor(hash(seedK,i,1)*20),4+Math.floor(hash(seedK,i,2)*16),tone(base,-.2));
+ for(let i=0;i<6;i++)P(x,7+Math.floor(hash(seedK,i,3)*12),5+Math.floor(hash(seedK,i,4)*8),tone(base,.35));
+ return outline(c,'#1d2a19');}
+function pineTree(base){const c=cnv(24,36),x=c.getContext('2d');
+ R(x,10,28,4,6,'#6e4a2a');R(x,10,28,1,6,'#8a5f36');
+ for(let i=0;i<4;i++){const y0=2+i*6,hgt=11;for(let y=0;y<hgt;y++){const hw=Math.round(1+(y/(hgt-1))*(3+i*1.9));R(x,12-hw,y0+y,hw,1,tone(base,.08*(3-i)/3+.04));R(x,12,y0+y,hw,1,tone(base,-.12));}R(x,12-Math.round(4+i*1.9),y0+hgt-1,Math.round(4+i*1.9)*2,1,tone(base,-.28));}
+ return outline(c,'#1d2a19');}
+const TREES=[roundTree('#3f8a3a',0),roundTree('#4b9a3c',1),roundTree('#3d8048',2),pineTree('#2f7a4a'),pineTree('#3a7f3a')];
+const TREES_AUTUMN=[roundTree('#d9822b',3),roundTree('#c8502e',4),roundTree('#e0b03a',5),pineTree('#4a7a3a'),roundTree('#d06a2a',6)];
+const BUSH=(()=>{const c=cnv(18,14),x=c.getContext('2d');SE(x,9,8,7.6,5.2,'#4f9a3f');SE(x,6,6,3,2.5,'#5aa848',false);P(x,5,9,'#e0574a');P(x,12,7,'#e0574a');P(x,9,10,'#f2c14e');return outline(c,'#1d2a19');})();
+const ROCK=(()=>{const c=cnv(16,12),x=c.getContext('2d');SE(x,8,7,6.2,4.2,'#9a958c');P(x,5,5,'#c8c4bb');P(x,6,5,'#c8c4bb');return outline(c);})();
+function signSpr(read){const c=cnv(16,20),x=c.getContext('2d');R(x,7,9,2,9,'#7a5030');R(x,2,2,12,8,read?'#b8946a':'#f2c14e');R(x,2,2,12,1,read?'#cfae84':'#ffe08a');R(x,2,9,12,1,read?'#94724c':'#c9952c');
+ if(read){R(x,4,4,8,1,'#7a5a3a');R(x,4,6,6,1,'#7a5a3a');}else{R(x,7,3,2,1,INK);R(x,9,4,1,1,INK);R(x,8,5,1,1,INK);R(x,7,6,1,1,INK);R(x,7,8,1,1,INK);}
+ return outline(c);}
+const SIGN=[signSpr(false),signSpr(true)];
+const BARRICADE=(()=>{const c=cnv(18,18),x=c.getContext('2d');R(x,2,4,2,12,'#6e4a2a');R(x,14,4,2,12,'#6e4a2a');for(let i=0;i<12;i++){R(x,3+i,5+i*.8|0,2,2,'#b98a5a');R(x,15-i,5+i*.8|0,2,2,'#a87a4a');}R(x,1,6,16,2,'#e0574a');R(x,1,6,4,2,'#fff3e0');R(x,9,6,4,2,'#fff3e0');return outline(c);})();
+const EXCL=(()=>{const c=cnv(11,14),x=c.getContext('2d');R(x,1,1,9,9,'#ffd23f');R(x,1,1,9,1,'#fff09a');P(x,4,10,'#ffd23f');P(x,5,10,'#ffd23f');P(x,5,11,'#ffd23f');R(x,4,2,3,4,INK);R(x,4,7,3,2,INK);return outline(c);})();
+const QMARK=(()=>{const c=cnv(11,14),x=c.getContext('2d');R(x,1,1,9,9,'#9fd3ef');R(x,1,1,9,1,'#d8f0ff');P(x,4,10,'#9fd3ef');P(x,5,10,'#9fd3ef');P(x,5,11,'#9fd3ef');R(x,4,2,3,1,INK);R(x,6,3,1,2,INK);R(x,5,5,1,1,INK);R(x,5,7,1,2,INK);return outline(c);})();
+const DOWNARROW=(()=>{const c=cnv(12,12),x=c.getContext('2d');R(x,4,1,4,5,'#ffd23f');for(let i=0;i<5;i++)R(x,1+i,6+i,10-2*i,1,'#ffd23f');return outline(c);})();
+function bridgeTile(o){const c=cnv(16,16),x=c.getContext('2d');
+ if(o==='h'){R(x,0,3,16,10,'#a8733f');for(let i=0;i<4;i++){R(x,i*4,3,1,10,'#7a5030');R(x,i*4+1,3,3,1,'#c48c52');}R(x,0,1,16,2,'#6e4a2a');R(x,0,13,16,2,'#6e4a2a');R(x,0,0,2,4,'#5a3a20');R(x,0,12,2,4,'#5a3a20');R(x,0,15,16,1,'rgba(0,0,0,.3)');}
+ else{R(x,3,0,10,16,'#a8733f');for(let i=0;i<4;i++){R(x,3,i*4,10,1,'#7a5030');R(x,3,i*4+1,10,1,'#c48c52');}R(x,1,0,2,16,'#6e4a2a');R(x,13,0,2,16,'#6e4a2a');R(x,0,0,4,2,'#5a3a20');R(x,12,0,4,2,'#5a3a20');R(x,15,0,1,16,'rgba(0,0,0,.3)');}
+ return c;}
+const BRIDGE={h:bridgeTile('h'),v:bridgeTile('v')};
+
+/* ----- 건물 외관 ----- */
+function windowAt(x,wx,wy){R(x,wx,wy,10,8,'#5a4a3a');R(x,wx+1,wy+1,8,6,'#9fd3ef');R(x,wx+4,wy+1,1,6,'#5a4a3a');R(x,wx+1,wy+4,8,1,'#5a4a3a');P(x,wx+2,wy+2,'#e8f7ff');P(x,wx+6,wy+2,'#e8f7ff');R(x,wx-1,wy+8,12,1,'#7a6a5a');}
+function building(kind,w,h){
+ const W=w*16,H=h*16+14;
+ if(kind==='market'){const c=cnv(W,H),x=c.getContext('2d');R(x,5,22,W-10,H-44,'#e8d2b0');for(let yy=26;yy<H-22;yy+=4)R(x,5,yy,W-10,1,'#d8c09c');R(x,3,14,3,H-20,'#7a5030');R(x,W-6,14,3,H-20,'#7a5030');
+  for(let yy=6;yy<22;yy++){const inset=Math.round((22-yy)*.6);for(let xx=inset;xx<W-inset;xx++)P(x,xx,yy,Math.floor((xx-inset)/6)%2?'#fff3ea':'#e0574a');}
+  for(let xx=0;xx<W;xx+=6)E(x,xx+3,22,3,2,Math.floor(xx/6)%2?'#fff3ea':'#e0574a');
+  R(x,2,H-26,W-4,22,'#c99a6a');for(let xx=2;xx<W-2;xx+=8)R(x,xx,H-26,1,22,'#a87a4a');R(x,2,H-26,W-4,2,'#e0b888');R(x,2,H-5,W-4,2,'#8a5a3b');
+  R(x,W/2-7,H-20,14,17,'#5a3a22');R(x,W/2-6,H-19,12,16,'#3a2414');
+  ['#e0574a','#f2c14e','#8cc56b','#e38a3c','#b0a9d0','#e0574a'].forEach((col,i)=>{const cx=10+i*((W-20)/5);if(Math.abs(cx-W/2)<9)return;E(x,cx,H-29,3.2,3,col);P(x,Math.round(cx)-1,H-31,'#ffffff');});
+  return outline(c);}
+ if(kind==='tower'){const c=cnv(W,H+8),x=c.getContext('2d'),HH=H+8,cx=W/2;
+  for(let xx=10;xx<W-10;xx++){const t=(xx-10)/(W-20);R(x,xx,36,1,HH-38,t<.3?'#c4bee0':t<.75?'#b0a9d0':'#948cbc');}
+  for(let yy=44;yy<HH-6;yy+=8)R(x,10,yy,W-20,1,'#9a92c4');
+  for(const yy of[48,70]){R(x,cx-4,yy,8,10,'#4a4070');R(x,cx-3,yy+1,6,8,'#fdf2c0');R(x,cx-3,yy+1,6,1,'#ffffff');}
+  R(x,cx-7,HH-22,14,20,'#4a4070');R(x,cx-6,HH-21,12,19,'#6a5f9e');P(x,cx+3,HH-12,'#f2c14e');
+  for(let yy=3;yy<40;yy++){const hw=Math.round(2+(yy-3)/37*(W/2-4));R(x,cx-hw,yy,hw,1,'#7a6fb0');R(x,cx,yy,hw,1,'#5a5090');}
+  R(x,4,38,W-8,3,'#4a4070');E(x,cx,2.5,2,2,'#f2c14e');
+  return outline(c);}
+ if(kind==='home'){const c=cnv(W,H),x=c.getContext('2d'),cx=W/2;
+  R(x,W-24,2,5,12,'#6e6a66');R(x,W-25,1,7,2,'#8a8682');
+  R(x,9,28,W-18,H-30,'#9c6b43');for(let xx=11;xx<W-10;xx+=5)R(x,xx+(xx%3),30,1,H-34,'#7f5532');R(x,9,28,3,H-30,'#b07a4e');
+  E(x,cx,28,W/2-9,5,'#d6b07e');E(x,cx,28,W/2-14,3,'#c49a68');E(x,cx,28,W/2-19,1.5,'#d6b07e');
+  SE(x,cx,18,W/2-3,13,'#6fae55');for(let i=0;i<20;i++)P(x,8+Math.floor(hash(i,7)*(W-16)),8+Math.floor(hash(i,8)*18),i%2?'#5a9a44':'#8cc56b');
+  E(x,cx,H-16,7,8,'#4a2e1a');R(x,cx-7,H-16,14,12,'#4a2e1a');E(x,cx,H-16,5.6,6.6,'#6b4428');R(x,cx-5.6|0,H-16,12,11,'#6b4428');P(x,cx+3,H-10,'#f2c14e');
+  E(x,cx+20,H-34,4.5,4.5,'#5a3a22');E(x,cx+20,H-34,3.3,3.3,'#fdf2c0');P(x,cx+19,H-35,'#ffffff');
+  R(x,cx-26,H-14,2,10,'#6b4a30');R(x,cx-29,H-20,8,6,'#e0574a');R(x,cx-29,H-20,8,1,'#f08a7a');
+  outline(c);c.smoke=[W-22,0];return c;}
+ if(kind==='bigtree'){const c=cnv(104,112),x=c.getContext('2d');
+  R(x,44,58,16,50,'#7a5030');R(x,44,58,4,50,'#946538');R(x,56,58,4,50,'#63401f');R(x,40,102,24,6,'#7a5030');R(x,36,105,8,3,'#7a5030');R(x,60,105,8,3,'#7a5030');
+  E(x,52,96,5,6,'#3a2414');
+  SE(x,52,40,48,34,'#c86a2a',false);SE(x,28,38,17,14,'#d9822b',false);SE(x,76,36,17,14,'#e09a30',false);SE(x,52,20,22,14,'#e8b040');
+  for(let i=0;i<40;i++)P(x,10+Math.floor(hash(i,31)*84),10+Math.floor(hash(i,32)*58),hash(i,33)<.5?'#a8501e':'#f2c860');
+  [[22,40],[38,24],[66,22],[82,42],[52,52],[30,58],[74,58],[52,32],[14,52]].forEach(([ax,ay])=>{E(x,ax,ay,2.6,3,'#8a5a2a');R(x,ax-3,ay-4,6,2,'#4a3018');P(x,ax-1,ay-1,'#c8a060');});
+  return outline(c,'#2a1a10');}
+ const K={hall:{wall:'#efdcb8',roof:'#b5533a',door:'#6b4a30'},office:{wall:'#d9e2ea',roof:'#4f6a86',door:'#4f6a86',flat:1},bank:{wall:'#f3eee2',roof:'#8f8a7a',door:'#8a6a3a'},shop:{wall:'#f6c9d0',roof:'#c95f7a',door:'#9a4a5a'},repair:{wall:'#c9d6c2',roof:'#5f7360',door:'#7a7f86',flat:1},exchange:{wall:'#e4e8f0',roof:'#2f5a8a',door:'#2f4f7f',flat:1}}[kind];
+ const c=cnv(W,H),x=c.getContext('2d'),roofH=Math.round(H*.46),wt=roofH-3;
+ if(kind==='hall'){R(x,W-24,4,7,12,'#8a5a40');R(x,W-25,3,9,2,'#6e4030');c.smoke=[W-21,2];}
+ if(kind==='office'){R(x,W-16,wt-17,6,10,'#7a8a9a');R(x,W-17,wt-18,8,2,'#5a6a7a');c.smoke=[W-13,wt-19];}
+ R(x,1,wt,W-2,H-wt-1,K.wall);for(let yy=wt+4;yy<H-4;yy+=4)R(x,1,yy,W-2,1,tone(K.wall,-.07));R(x,1,wt,2,H-wt-1,tone(K.wall,-.14));R(x,W-3,wt,2,H-wt-1,tone(K.wall,-.14));
+ R(x,1,H-4,W-2,3,'#9a948a');for(let xx=2;xx<W-2;xx+=5)P(x,xx,H-3,'#7f7a72');
+ if(K.flat){R(x,0,wt-7,W,8,K.roof);R(x,0,wt-7,W,1,tone(K.roof,.25));R(x,0,wt,W,1,tone(K.roof,-.35));for(let xx=3;xx<W-2;xx+=6)R(x,xx,wt-5,1,4,tone(K.roof,-.15));}
+ else{for(let yy=Math.max(1,c.smoke?0:1);yy<=wt+1;yy++){const t=(wt+1-yy)/wt,inset=Math.round(t*W*.27),band=Math.floor((wt+1-yy)/3);if(yy<1)continue;R(x,inset,yy,W-2*inset,1,yy<=2?tone(K.roof,.22):(wt+1-yy)%3===0?tone(K.roof,-.16):K.roof);for(let xx=inset+(band%2)*3;xx<W-inset;xx+=6)P(x,xx,yy,tone(K.roof,-.2));}R(x,0,wt+1,W,2,tone(K.roof,-.34));}
+ if(kind==='hall'){R(x,W-24,4,7,6,'#8a5a40');R(x,W-25,3,9,2,'#6e4030');}
+ const wy=wt+Math.round((H-wt)*.28),nw=Math.max(2,Math.floor(W/24));
+ for(let i=0;i<nw;i++){const wx=Math.round((i+.5)*W/nw)-5;if(Math.abs(wx+5-W/2)<12)continue;windowAt(x,wx,wy);}
+ if(kind==='repair'){R(x,W/2-15,H-22,30,19,'#5f646a');R(x,W/2-14,H-21,28,18,'#8a8f94');for(let yy=H-19;yy<H-3;yy+=3)R(x,W/2-14,yy,28,1,'#6f747a');R(x,W/2-5,H-12,10,9,'#3a3e44');E(x,W/2,wt-14,6,6,'#8a8f94');E(x,W/2,wt-14,2.5,2.5,K.roof);for(let i=0;i<8;i++){const a=i*Math.PI/4;R(x,Math.round(W/2+Math.cos(a)*7)-1,Math.round(wt-14+Math.sin(a)*7)-1,2,2,'#8a8f94');}}
+ else{const dw=12,dh=16,dx=Math.round(W/2-dw/2),dy=H-dh-3;R(x,dx-1,dy-1,dw+2,dh+1,tone(K.door,-.35));R(x,dx,dy,dw,dh,K.door);R(x,dx+dw/2,dy,1,dh,tone(K.door,-.25));P(x,dx+dw-3,dy+dh/2,'#f2c14e');R(x,dx-2,H-3,dw+4,2,'#b0aaa0');}
+ if(kind==='hall'){R(x,W/2-9,wt+3,18,6,'#6b4a30');R(x,W/2-8,wt+4,16,4,'#d6b07e');}
+ if(kind==='office'){SE(x,W/2,wt-15,5,5,'#c78f5e');R(x,W/2-5,wt-21,10,3,'#6b4a30');R(x,W/2,wt-23,1,2,'#6b4a30');}
+ if(kind==='bank'){for(let i=0;i<4;i++){const cx=Math.round(W*(.14+i*.24));if(Math.abs(cx+2-W/2)<10)continue;R(x,cx,wt+3,5,H-wt-7,'#ffffff');R(x,cx+4,wt+3,1,H-wt-7,'#d8d0be');R(x,cx-1,wt+2,7,2,'#d8d0be');}SE(x,W/2,roofH*.55,4,4,'#e8b84a');R(x,W/2-4,roofH*.55-5,8,2,'#7a5030');}
+ if(kind==='shop'){for(let xx=1;xx<W-1;xx+=4){R(x,xx,wt+1,4,5,Math.floor(xx/4)%2?'#fff3f6':'#e05a7a');E(x,xx+2,wt+6,2,1.4,Math.floor(xx/4)%2?'#fff3f6':'#e05a7a');}R(x,W/2-10,2,20,12,'#f2c14e');R(x,W/2-10,5,20,2,'#35433c');R(x,W/2-7,9,5,3,'#d8a840');R(x,W/2-10,2,20,1,'#ffe08a');}
+ if(kind==='exchange'){R(x,W/2-14,wt-20,28,14,'#5a4a3a');R(x,W/2-13,wt-19,26,12,'#1f2a38');[[0,8],[1,6],[2,7],[3,4],[4,5],[5,2]].forEach(([i,h],k,a)=>{const bx=W/2-11+i*4;R(x,bx,wt-8-h,3,h,k&&h<a[k-1][1]?'#e0574a':'#5ac85a');});R(x,W/2-1,wt-6,2,6,'#5a4a3a');}
+ const sm=c.smoke;outline(c);if(sm)c.smoke=sm;return c;}
+
+/* ----- 실내 가구 ----- */
+function furn(type,w=1,arg){const W=w*16;let c,x;
+ const mk=(cw,ch)=>{c=cnv(cw,ch);x=c.getContext('2d');};
+ switch(type){
+ case 'counter':case 'glass':case 'bench':{mk(W,26);const top=type==='glass'?'#d8e4ea':type==='bench'?'#a87a4a':'#d6a66e',front=type==='glass'?'#ece6d8':type==='bench'?'#7a5636':'#9c6b43';
+  R(x,1,1,W-2,8,top);R(x,1,1,W-2,1,tone(top,.25));R(x,1,9,W-2,15,front);R(x,1,9,W-2,1,tone(front,-.3));
+  for(let i=0;i<w;i++)R(x,i*16+4,12,8,9,tone(front,-.1));R(x,1,22,W-2,2,tone(front,-.35));
+  if(type==='glass'){R(x,1,13,W-2,2,'#e8b84a');for(let i=0;i<w;i+=2){R(x,i*16+3,-0,10,1,'#bcd8e4');}}
+  if(type==='bench'){R(x,W/2-4,2,8,5,'#2a2e36');R(x,W/2-3,3,6,3,'#5a8ab0');P(x,W/2-1,3,'#ffffff');P(x,W/2,4,'#ffffff');P(x,W/2+1,5,'#ffffff');R(x,4,3,6,2,'#9a9ea4');R(x,W-11,2,3,5,'#c8643c');}
+  if(type==='counter'&&arg==='papers'){R(x,5,2,7,5,'#ffffff');R(x,6,3,5,1,'#9aa');R(x,W-12,2,6,5,'#f2c14e');}
+  if(type==='counter'&&arg==='register'){R(x,W/2-5,0,10,7,'#5a6a7a');R(x,W/2-4,1,8,2,'#9fd3ef');}
+  break;}
+ case 'desk':{mk(W,24);R(x,1,4,W-2,7,'#b07a48');R(x,1,4,W-2,1,'#c8925e');R(x,2,11,3,11,'#7a5030');R(x,W-5,11,3,11,'#7a5030');R(x,1,11,W-2,3,'#946538');R(x,5,1,8,5,'#ffffff');R(x,6,2,6,1,'#aab');if(w>1){R(x,W-12,0,3,6,'#6b4a30');E(x,W-10,1,3,2,'#f2c14e');}break;}
+ case 'shelf':{mk(16,32);R(x,1,1,14,30,'#7a5030');R(x,2,2,12,28,'#4a2e1a');for(const y of[9,17,25])R(x,2,y,12,2,'#7a5030');const cols=['#c8503e','#3d6b9e','#e0b03a','#5a8a45','#8a5aa0'];for(let r=0;r<3;r++){let xx=3;while(xx<13){const bw=1+(hash(xx,r,type.length)*2|0),bh=5+(hash(r,xx,9)*2|0);R(x,xx,(r*8)+9-bh,bw,bh,cols[(xx+r)%5]);xx+=bw+1;}}break;}
+ case 'plant':{mk(16,24);R(x,4,15,8,7,'#c8643c');R(x,3,14,10,2,'#e07a4a');SE(x,8,9,6,6.5,'#4f9a3f');P(x,4,4,'#4f9a3f');P(x,11,3,'#5aa848');P(x,8,2,'#5aa848');break;}
+ case 'bed':{mk(16,34);R(x,1,1,14,7,'#6e4a2a');R(x,1,6,14,27,'#8a5a36');R(x,2,7,12,25,'#f4f1e6');R(x,3,8,10,5,'#ffffff');R(x,2,14,12,18,'#5b8ac8');for(let y=16;y<32;y+=4)R(x,2,y,12,1,'#4a74b0');R(x,2,14,12,1,'#8ab0e0');break;}
+ case 'basket':{mk(16,16);R(x,2,8,12,7,'#b88a50');for(let y=9;y<15;y+=2)R(x,2,y,12,1,'#9a7040');SE(x,8,8,5.5,3.5,arg||'#e0574a');P(x,6,6,'#ffffff');break;}
+ case 'rack':{mk(32,30);R(x,3,3,2,26,'#6f747a');R(x,27,3,2,26,'#6f747a');R(x,2,3,28,2,'#8a8f94');R(x,1,27,8,2,'#6f747a');R(x,23,27,8,2,'#6f747a');['#e0574a','#3d6b9e','#f2c14e'].forEach((col,i)=>{const px=6+i*7;R(x,px+2,5,2,2,'#8a8f94');R(x,px,7,7,15,col);for(let y=9;y<22;y+=3)R(x,px,y,7,1,tone(col,-.22));R(x,px,7,7,1,tone(col,.3));});break;}
+ case 'mannequin':{mk(16,30);R(x,7,22,2,6,'#6f747a');R(x,4,27,8,2,'#6f747a');R(x,3,7,10,15,'#c95f3a');for(let y=9;y<22;y+=3)R(x,3,y,10,1,'#a84a2a');R(x,3,7,10,1,'#e88a5a');E(x,8,4,2.6,2.6,'#e8d8c0');break;}
+ case 'crate':{mk(16,18);R(x,1,4,14,13,'#b88a50');R(x,1,4,14,1,'#d0a468');for(let y=8;y<17;y+=4)R(x,1,y,14,1,'#8a6438');R(x,7,4,2,13,'#8a6438');break;}
+ case 'cooler':{mk(14,30);R(x,2,13,10,16,'#e8eef2');R(x,2,13,10,1,'#ffffff');R(x,5,17,4,2,'#5a6a7a');E(x,7,7,4,5.5,'#7fc0e8');E(x,6,5,1.2,2,'#d8f0ff');break;}
+ case 'globe':{mk(14,26);R(x,6,16,2,7,'#7a5030');R(x,3,22,8,2,'#7a5030');E(x,7,9,5.5,5.5,'#4a90c8');E(x,5,7,2,2.5,'#5aa848');E(x,9,11,2,1.5,'#5aa848');P(x,5,6,'#ffffff');break;}
+ case 'seat':{mk(W,18);R(x,1,1,W-2,5,'#8a5a36');R(x,1,7,W-2,5,'#a87a4a');R(x,1,7,W-2,1,'#c8925e');R(x,3,12,2,5,'#6e4a2a');R(x,W-5,12,2,5,'#6e4a2a');break;}
+ case 'stanchion':{mk(16,20);R(x,7,6,2,12,'#e8b84a');E(x,8,5,2,2,'#f2d070');R(x,5,17,6,2,'#c89a30');R(x,9,8,7,2,'#c0303a');break;}
+ }
+ return outline(c);}
+/* 벽 장식 (실내 바닥 그림에 함께 그림) */
+function wallDecor(x,type,px,w){const W=w*16;
+ if(type==='window'){R(x,px+2,6,W-4,18,'#5a4a3a');R(x,px+4,8,W-8,14,'#9fd3ef');R(x,px+W/2-1,8,2,14,'#5a4a3a');R(x,px+4,14,W-8,2,'#5a4a3a');R(x,px+5,9,3,2,'#e8f7ff');R(x,px,24,W,2,'#7a6a5a');}
+ if(type==='board'){R(x,px+2,5,W-4,20,'#6e4a2a');R(x,px+4,7,W-8,16,'#c8a070');[['#ffffff',6,9],['#f2c14e',W-14,8],['#9fd3ef',W/2-3,13],['#f3a6b5',8,16]].forEach(([c,a,b])=>{R(x,px+a,b,7,6,c);P(x,px+a+3,b,'#c0303a');});}
+ if(type==='map'){R(x,px+2,5,W-4,20,'#7a5a3a');R(x,px+4,7,W-8,16,'#efe2c0');for(let i=0;i<5;i++)E(x,px+8+i*(W-16)/4,12+(i%2)*5,3,2.5,'#8cc56b');for(let i=0;i<W-12;i+=3)P(x,px+6+i,15+Math.round(Math.sin(i/5)*3),'#c0303a');}
+ if(type==='clock'){E(x,px+8,14,6,6,'#6b4a30');E(x,px+8,14,4.6,4.6,'#ffffff');R(x,px+8,10,1,4,INK);R(x,px+8,14,3,1,INK);}
+ if(type==='vault'){R(x,px+2,3,W-4,24,'#6f747a');E(x,px+W/2,15,11,11,'#8a8f94');E(x,px+W/2,15,8,8,'#a8acb0');E(x,px+W/2,15,2.5,2.5,'#5a5e64');for(let i=0;i<6;i++){const a=i*Math.PI/3;R(x,Math.round(px+W/2+Math.cos(a)*5),Math.round(15+Math.sin(a)*5),2,2,'#5a5e64');}R(x,px+W/2-16,9,4,12,'#e8b84a');}
+ if(type==='chalk'){R(x,px+2,4,W-4,22,'#6e4a2a');R(x,px+4,6,W-8,18,'#2f4a3a');for(let i=0;i<W-14;i++){const t=i/(W-14),yy=22-Math.round((Math.pow(2.6,t*3)-1)/(Math.pow(2.6,3)-1)*14);P(x,px+7+i,yy,'#f4f1e6');}for(let i=0;i<W-14;i++)P(x,px+7+i,22-Math.round(i/(W-14)*7),'#f2c14e');R(x,px+6,8,1,15,'#d8d8d8');R(x,px+6,22,W-12,1,'#d8d8d8');}
+ if(type==='tools'){R(x,px+2,5,W-4,20,'#c8a070');for(let i=4;i<W-4;i+=4)for(let j=8;j<24;j+=4)P(x,px+i,j,'#9a7a50');R(x,px+8,8,2,12,'#8a8f94');R(x,px+6,8,6,3,'#8a8f94');R(x,px+18,9,2,11,'#7a5030');R(x,px+15,8,8,3,'#5a5e64');R(x,px+W-14,9,6,2,'#c0303a');R(x,px+W-12,11,2,9,'#c0303a');}
+ if(type==='frame'){R(x,px+3,6,W-6,16,'#c89a30');R(x,px+5,8,W-10,12,'#9fd3ef');E(x,px+W/2,17,5,3,'#5aa848');E(x,px+W/2+3,11,2,2,'#f2c14e');}
+ if(type==='ticker'){R(x,px+2,4,W-4,22,'#5a4a3a');R(x,px+4,6,W-8,18,'#1f2a38');for(let i=px+6;i<px+W-6;i+=4)R(x,i,22,2,1,'#3a4658');let py=16;for(let i=0;i<W-12;i++){const ny=Math.max(8,Math.min(21,16-Math.round(i/(W-12)*6)+Math.round(Math.sin(i*.9)*2+Math.sin(i*.37)*2)));P(x,px+6+i,ny,ny<=py?'#5ac85a':'#e0574a');py=ny;}}
+ if(type==='curtain'){for(let i=0;i<W;i+=4)R(x,px+i,0,4,28,i%8?'#e0574a':'#fff3ea');}}
+
+/* ================= 지도 공통 ================= */
+function newMap(id,W,H,o={}){return Object.assign({id,W,H,G:new Uint8Array(W*H),solid:new Uint8Array(W*H),objects:[],inter:new Map(),npcs:[],bg:'#3d7fc0',exit:null,particles:[]},o);}
+const addObj=(m,spr,x,y,sy,extra={})=>{const o={spr,x,y,sy,...extra};m.objects.push(o);return o;};
+
+/* ================= 바깥 마을 ================= */
+const objectives=['촌장 거북에게 말을 걸어 시작해요','다리를 건너 도토리 회사의 사장 곰을 만나요','장보기 시장의 상인 토끼를 만나요','도토리 은행의 은행원 부엉이를 만나요','은행 옆 복리관의 부엉이 박사를 만나요','다리 건너 도토리 증권소의 까치 분석가를 만나요','증권소 옆 반짝 카드가게의 여우 점원을 만나요','너구리 수리점에 가 봐요','언덕 위 10년 나무를 살펴봐요','다람이 집 책상에서 재무계획서를 써요'];
+const objective=()=>state.complete?'완성! 다람이 집 책상에서 수료증을 다시 볼 수 있어요':objectives[state.step];
+const zoneNames=['마을 입구','회사 마을','시장 마을','은행 마을','카드가게 마을','수리점 마을','단풍 언덕','다람이 꽃밭','호숫가'];
+const ZTHEME=['plain','plain','market','bank','plain','plain','autumn','meadow','plain'];
+const ZW=20,ZH=15,CH=3,MW=2+3*ZW+2*CH+2,MH=2+3*ZH+2*CH+2,N=MW*MH,idx=(x,y)=>y*MW+x,inb=(x,y)=>x>=0&&y>=0&&x<MW&&y<MH;
+const world=newMap('world',MW,MH,{name:'숲 마을'});
+const G=world.G,solid=world.solid,mm=new Uint8Array(N),resv=new Uint8Array(N),ZID=new Uint8Array(N).fill(255);
+const zones=[[0,2],[1,2],[2,2],[2,1],[1,1],[0,1],[0,0],[1,0],[2,0]].map(([c,r])=>({c,r,x0:2+c*(ZW+CH),y0:2+r*(ZH+CH)}));
+zones.forEach((z,zi)=>{for(let ly=-1;ly<=ZH;ly++)for(let lx=-1;lx<=ZW;lx++){const gx=z.x0+lx,gy=z.y0+ly;if(inb(gx,gy))ZID[idx(gx,gy)]=zi;}for(let ly=0;ly<ZH;ly++)for(let lx=0;lx<ZW;lx++){if((lx===0||lx===ZW-1)&&(ly===0||ly===ZH-1))continue;G[idx(z.x0+lx,z.y0+ly)]=1;}});
+const bridges=[{a:0,b:1,step:1},{a:1,b:2,step:2},{a:2,b:3,step:3},{a:3,b:4,step:5},{a:4,b:5,step:7},{a:5,b:6,step:8},{a:6,b:7,step:9}];
+const bridgeAt=new Map(),PLANK_DT=.13;
+bridges.forEach(b=>{const A=zones[b.a],B=zones[b.b];b.tiles=[];
+ if(A.r===B.r){b.orient='h';const L=A.c<B.c?A:B,Rz=A.c<B.c?B:A,y=L.y0+9;for(let x=L.x0+ZW;x<Rz.x0;x++)b.tiles.push([x,y]);const oL=[L.x0+ZW-1,y],oR=[Rz.x0,y];b.openA=A===L?oL:oR;b.openB=A===L?oR:oL;if(A!==L)b.tiles.reverse();}
+ else{b.orient='v';const U=A.r<B.r?A:B,D=A.r<B.r?B:A,x=U.x0+10;for(let y=U.y0+ZH;y<D.y0;y++)b.tiles.push([x,y]);const oU=[x,U.y0+ZH-1],oD=[x,D.y0];b.openA=A===U?oU:oD;b.openB=A===U?oD:oU;if(A!==U)b.tiles.reverse();}
+ b.tiles.forEach(t=>bridgeAt.set(t[0]+','+t[1],b));b.st='locked';b.t=0;b.dur=b.tiles.length*PLANK_DT+.2;});
+const gl=(z,lx,ly)=>[zones[z].x0+lx,zones[z].y0+ly];
+function paintPath(z,pts){for(let k=0;k<pts.length-1;k++){let [x,y]=pts[k];const [qx,qy]=pts[k+1];const set=()=>{const [gx,gy]=gl(z,x,y),i=idx(gx,gy);if(G[i])G[i]=2;resv[i]=1;};set();while(x!==qx){x+=Math.sign(qx-x);set();}while(y!==qy){y+=Math.sign(qy-y);set();}}}
+const reserveAround=(gx,gy,r=1)=>{for(let y=gy-r;y<=gy+r;y++)for(let x=gx-r;x<=gx+r;x++)if(inb(x,y))resv[idx(x,y)]=1;};
+
+const spots=[
+ {step:0,title:'촌장 거북',npc:'turtle',verb:'말 걸기',lines:['어서 오렴, 도토리 숲 마을에 온 걸 환영한다!','스무 살이 된 너는 이제 처음으로 내 돈을 직접 관리하게 될 거야.','마을 가게를 돌며 미션을 풀 때마다 다음 마을로 가는 다리가 놓인단다.','먼저 별명과 진로를 정해 볼까?']},
+ {step:1,title:'사장 곰',npc:'bear',verb:'말 걸기',lines:['첫 월급날이구나! 축하하네.','그런데 명세서를 보면 세전 금액과 통장에 들어오는 돈이 다르다네.','얼마가 들어올지 먼저 예상해 보겠나?']},
+ {step:2,title:'상인 토끼',npc:'rabbit',verb:'말 걸기',lines:['월급이 들어왔으면 이제 나눠 써야지!','뒤에 있는 바구니 일곱 개 보이지? 주거, 통신, 교통, 식비, 여가, 저축, 비상금이야.','한 푼도 남김없이 담아 봐!']},
+ {step:3,title:'은행원 부엉이',npc:'owl',verb:'말 걸기',lines:['부엉, 도토리 은행에 오신 걸 환영해요.','매달 같은 돈을 넣는 적금, 이자는 생각보다 적을 수도 있어요.','직접 계산해 볼까요?']},
+ {step:4,title:'부엉이 박사',npc:'owl2',verb:'말 걸기',lines:['여기는 복리관. 칠판의 곡선 보이나? 이자에도 이자가 붙으면 저렇게 솟아오르지.','돈이 두 배가 되는 데 몇 년이 걸릴지 맞혀 보겠나?']},
+ {step:5,title:'까치 분석가',npc:'magpie',verb:'말 걸기',lines:['깍깍! 도토리 증권소에 온 걸 환영해. 반짝이는 숫자를 보면 가만히 있을 수가 없지.','복리관에서는 이자가 매년 똑같이 붙었지? 여기서는 매일 가격이 달라져.','주식이 뭔지부터 차근차근 알려 줄게. 그다음 계산으로 확인해 보자!']},
+ {step:6,title:'여우 점원',npc:'fox',verb:'말 걸기',lines:['어서 오세요~ 이번 시즌 신상 패딩이에요!','60만 원인데, 결제 방법은 여러 가지가 있답니다. 호호.']},
+ {step:7,title:'수리공 너구리',npc:'raccoon',verb:'말 걸기',lines:['이런, 갑자기 고장이 났다고?','예상 못 한 지출은 꼭 생기기 마련이지. 비상금이 얼마나 있는지 볼까?']},
+ {step:8,title:'10년 나무',npc:null,verb:'살펴보기',lines:['…바스락. 나는 10년 동안 자라 온 나무란다.','네가 매달 심는 도토리가 10년 뒤 어떻게 자랄지 보여 주마.']},
+ {step:9,title:'다람이 책상',npc:null,verb:'앉기',lines:['내 방 책상이다.','오늘 마을에서 배운 것을 모아 나만의 재무계획서를 써 보자.']}
+];
+const buildings=[{z:0,kind:'hall',x:3,y:2,w:5,h:4,spot:0,label:'마을 안내소'},{z:1,kind:'office',x:7,y:2,w:6,h:5,spot:1,label:'도토리 회사'},{z:2,kind:'market',x:13,y:2,w:5,h:4,spot:2,label:'장보기 시장'},{z:3,kind:'bank',x:13,y:2,w:6,h:5,spot:3,label:'도토리 은행'},{z:3,kind:'tower',x:3,y:1,w:4,h:6,spot:4,label:'복리관'},{z:4,kind:'exchange',x:13,y:2,w:5,h:4,spot:5,label:'도토리 증권소'},{z:4,kind:'shop',x:5,y:2,w:6,h:4,spot:6,label:'반짝 카드가게'},{z:5,kind:'repair',x:2,y:3,w:6,h:4,spot:7,label:'너구리 수리점'},{z:6,kind:'bigtree',x:3,y:1,w:5,h:5,spot:8,label:'10년 나무'},{z:7,kind:'home',x:8,y:3,w:5,h:4,spot:9,label:'다람이 집'}];
+const terms=[
+ {z:0,x:12,y:7,t:'실수령액',d:'세전 월급에서 근로자 부담 보험료와 세금 공제액를 빼고 실제로 통장에 들어오는 돈이에요.'},
+ {z:1,x:15,y:6,t:'주휴수당',d:'1주 소정근로시간이 15시간 이상이고 정해진 근로일을 개근하는 등 요건을 충족하면 받는 유급 휴일 수당이에요.'},
+ {z:1,x:5,y:12,t:'4대 보험',d:'국민연금·건강보험(장기요양 포함)·고용보험·산재보험. 산재보험은 사업주가 부담해요.'},
+ {z:2,x:6,y:12,t:'50/30/20 법칙',d:'필요 50%, 욕구 30%, 저축 20%로 나누는 참고 기준이에요. 주거비와 소득에 맞게 조정할 수 있어요.'},
+ {z:3,x:8,y:5,t:'단리와 등차수열',d:'원금에만 이자가 붙는 것이 단리예요. 적금 이자는 1＋2＋…＋12처럼 등차수열의 합으로 계산해요.'},
+ {z:3,x:12,y:12,t:'복리와 등비수열',d:'이자에도 이자가 붙는 것이 복리예요. 원금 × (1＋r)ⁿ은 등비수열이에요.'},
+ {z:3,x:4,y:11,t:'72의 법칙',d:'72 ÷ 연이율(%) ≈ 돈이 2배가 되는 햇수. 정확한 값은 로그로 구해요.'},
+ {z:4,x:6,y:12,t:'리볼빙',d:'카드값의 일부만 내고 나머지를 다음 달로 넘기는 것이에요. 넘어간 금액에 높은 이자가 붙어요.'},
+ {z:5,x:15,y:12,t:'파킹통장',d:'언제든 넣고 뺄 수 있는 수시 입출금 통장이에요. 비상금 보관에 어울리지만 금리·조건은 꼭 확인해요.'},
+ {z:6,x:7,y:12,t:'이자소득세 15.4%',d:'예금·적금 이자에서 떼는 세금이에요. 소득세 14%＋지방소득세 1.4%.'},
+ /* 저장된 용어 번호가 바뀌지 않도록 새 용어는 끝에 추가 */
+ {z:4,x:15,y:12,t:'주식과 분산투자',d:'주식은 회사의 작은 조각(소유권)이에요. 원금이 보장되지 않아요. 여러 곳에 나눠 담는 분산투자는 위험을 줄이지만 없애지는 못해요.'}
+];
+const residents=[
+ {z:0,x:13,y:12,name:'아기 다람쥐',type:'kid',lines:['형, 누나! 월급 받으면 통장에 전부 들어오는 거지?','…궁금하면 내 문제 하나 풀어 볼래?'],
+  q:{q:'세전 월급이 통장에 그대로 다 들어올까?',c:['응, 그대로 다 들어와','아니, 세금·보험료가 먼저 빠져'],a:1,e:'세전 월급에서 근로자 부담 보험료와 세금 공제액을 뺀 실수령액이 들어와.'}},
+ {z:1,x:4,y:5,name:'고슴도치 대리',type:'hedgehog',lines:['명세서에서 "공제"라는 말 봤어?','월급에서 미리 빠지는 세금과 보험료야. 하나 계산해 볼까?'],
+  q:{q:`세전 월급 200만 원, 국민연금 근로자 부담 ${Assumptions.pension*100}%는 얼마일까?`,c:['1만 원','10만 원','20만 원'],a:1,e:'2,000,000 × 0.05 = 100,000원이야.'}},
+ {z:2,x:4,y:5,name:'오리 아주머니',type:'duck',lines:['나는 월급 받자마자 저축부터 떼어 놔.','너도 한번 계산해 보렴.'],
+  q:{q:'실수령액 200만 원, 50/30/20 기준으로 저축은?',c:['20만 원','40만 원','60만 원'],a:1,e:'2,000,000 × 0.2 = 400,000원. 저축 몫이 20%란다.'}},
+ {z:3,x:14,y:12,name:'거북 할머니',type:'turtle2',lines:['나는 이자에 이자가 붙는 걸 60년째 보고 있단다.','적금 이자를 계산할 때 나오는 수를 맞혀 보렴.'],
+  q:{q:'1＋2＋3＋…＋12는?',c:['66','78','144'],a:1,e:'12 × 13 ÷ 2 = 78. 적금 이자 계산에 쓰는 등차수열의 합이지.'}},
+ {z:4,x:3,y:5,name:'고양이 손님',type:'cat',lines:['무이자 할부라서 샀는데…','다음 달부터 매달 내 월급에서 빠져나가더라.'],
+  q:{q:'60만 원 패딩을 6개월 무이자 할부로 사면 한 달에 내는 돈은?',c:['6만 원','10만 원','12만 원'],a:1,e:'600,000 ÷ 6 = 100,000원. 이자는 없지만 6달 동안 월급에서 빠져나가.'}},
+ {z:5,x:14,y:5,name:'두더지 손님',type:'mole',lines:['액정이 깨졌는데 비상금이 없어서 대출을 받았어.','비상금이 얼마나 있어야 했을까?'],
+  q:{q:'생활비가 월 100만 원이면 비상금 목표(3~6개월분)는?',c:['30만~60만 원','100만 원','300만~600만 원'],a:2,e:'1,000,000 × 3 ~ 1,000,000 × 6 = 300만~600만 원.'}},
+ {z:6,x:15,y:5,name:'사슴 여행자',type:'deer',lines:['10년은 길어 보이지만, 한 달은 짧아.','72의 법칙, 알고 있니?'],
+  q:{q:'연 3% 복리라면, 72의 법칙으로 돈이 2배가 되는 데 약 몇 년?',c:['약 3년','약 24년','약 72년'],a:1,e:'72 ÷ 3 = 24년. 정확히는 log 2 ÷ log 1.03 ≈ 23.4년이야.'}}
+];
+
+const toLocal=(z,[gx,gy])=>[gx-zones[z].x0,gy-zones[z].y0];
+for(let z=0;z<8;z++){
+ bridges.forEach(b=>{[[b.a,b.openA],[b.b,b.openB]].forEach(([zz,o])=>{if(zz!==z)return;const [lx,ly]=toLocal(z,o);paintPath(z,ly===9?[[lx,9],[10,9]]:[[10,ly],[10,9]]);});});
+ buildings.filter(B=>B.z===z).forEach(B=>{const dx=B.x+Math.floor(B.w/2),dy=B.y+B.h-1;B.dx=dx;B.dy=dy;paintPath(z,[[dx,dy+1],[dx,9],[10,9]]);});}
+paintPath(0,[[4,12],[4,9],[10,9]]);
+paintPath(3,[[8,8],[12,8]]);paintPath(3,[[8,10],[12,10]]);paintPath(3,[[8,8],[8,10]]);paintPath(3,[[12,8],[12,10]]);
+for(let ly=11;ly<=13;ly++)for(let lx=12;lx<=17;lx++){const [gx,gy]=gl(2,lx,ly);G[idx(gx,gy)]=5;resv[idx(gx,gy)]=1;}
+
+const setSolid=(gx,gy,k=3)=>{if(!inb(gx,gy))return;solid[idx(gx,gy)]=1;mm[idx(gx,gy)]=k;};
+const smokers=[];
+buildings.forEach(B=>{const [bx,by]=gl(B.z,B.x,B.y),spr=building(B.kind,B.w,B.h);B.gx=bx;B.gy=by;
+ const sx=bx*16+B.w*8-spr.width/2,sy=(by+B.h)*16-spr.height;B.obj=addObj(world,spr,sx,sy,(by+B.h)*16,{label:B.label});
+ if(spr.smoke)smokers.push([sx+spr.smoke[0],sy+spr.smoke[1]]);
+ const [dgx,dgy]=gl(B.z,B.dx,B.dy);B.door=[dgx,dgy];
+ if(B.kind==='bigtree'){for(let x=dgx-1;x<=dgx+1;x++)setSolid(x,dgy,4);setSolid(dgx,dgy-1,4);}
+ else for(let y=by;y<by+B.h;y++)for(let x=bx;x<bx+B.w;x++)setSolid(x,y,4);
+ for(let y=by-1;y<=by+B.h;y++)for(let x=bx-1;x<=bx+B.w;x++)if(inb(x,y))resv[idx(x,y)]=1;
+ const s=spots[B.spot];s.building=B;
+ if(B.kind==='bigtree'){s.map=world;s.tx=dgx;s.ty=dgy;world.inter.set(dgx+','+dgy,{verb:s.verb,name:s.title,run:()=>talkSpot(s)});}
+ else world.inter.set(dgx+','+dgy,{verb:'들어가기',name:B.label,door:B,run:()=>enterBuilding(B)});
+ reserveAround(dgx,dgy+1);});
+terms.forEach((t,i)=>{const [gx,gy]=gl(t.z,t.x,t.y);t.gx=gx;t.gy=gy;t.obj=addObj(world,SIGN[0],gx*16,gy*16-4,gy*16+16);setSolid(gx,gy,5);reserveAround(gx,gy);world.inter.set(gx+','+gy,{verb:'읽기',name:'용어 표지판',run:()=>readSign(i)});});
+function makeNpc(type,tx,ty,o={}){return Object.assign({type,tx,ty,x:tx*16,y:ty*16,dir:'down',phase:rand()*2,moving:false,nx:tx,ny:ty,t:0,hx:tx,hy:ty,timer:1+rand()*3},o);}
+residents.forEach((r,ri)=>{const [gx,gy]=gl(r.z,r.x,r.y),n=makeNpc(r.type,gx,gy,{wander:true});r.npc=n;n.it={verb:'말 걸기',name:r.name,npc:n,run:()=>talkResident(ri)};world.npcs.push(n);for(let y=gy-1;y<=gy+1;y++)for(let x=gx-1;x<=gx+1;x++)if(inb(x,y)&&!solid[idx(x,y)]&&G[idx(x,y)])resv[idx(x,y)]=1;reserveAround(gx,gy,2);});
+bridges.forEach(b=>{[b.openA,b.openB].forEach(o=>reserveAround(o[0],o[1]));const [fx,fy]=b.tiles[0];world.inter.set(fx+','+fy,{verb:'살펴보기',name:'잠긴 다리',lockedBridge:b,run:()=>showDialog('잠긴 다리',['아직 다리가 놓이지 않았어요.','지금 목표: '+objective()])});});
+reserveAround(...gl(0,4,12));
+const addTree=(gx,gy)=>{const autumn=ZTHEME[ZID[idx(gx,gy)]]==='autumn',set=autumn?TREES_AUTUMN:TREES,v=Math.floor(rand()*5),spr=set[v];addObj(world,spr,gx*16+8-spr.width/2,gy*16+17-spr.height,gy*16+16,{tree:1,autumn});setSolid(gx,gy,3);};
+const free=(gx,gy)=>inb(gx,gy)&&G[idx(gx,gy)]===1&&!solid[idx(gx,gy)]&&!resv[idx(gx,gy)];
+zones.forEach((z,zi)=>{for(let ly=0;ly<ZH;ly++)for(let lx=0;lx<ZW;lx++){const gx=z.x0+lx,gy=z.y0+ly,i=idx(gx,gy);if(G[i]!==1||solid[i])continue;const edge=lx===0||ly===0||lx===ZW-1||ly===ZH-1,inner=lx===1||ly===1||lx===ZW-2||ly===ZH-2;
+ const isOpen=bridges.some(b=>(b.openA[0]===gx&&b.openA[1]===gy)||(b.openB[0]===gx&&b.openB[1]===gy));if(isOpen)continue;
+ if(edge)addTree(gx,gy);else if(inner&&!resv[i]&&rand()<.35)addTree(gx,gy);}});
+const pondZone=zones[8];for(let ly=0;ly<ZH;ly++)for(let lx=0;lx<ZW;lx++){const dx=(lx-10)/5.5,dy=(ly-7)/3.6;if(dx*dx+dy*dy<1)G[idx(pondZone.x0+lx,pondZone.y0+ly)]=0;}
+for(let zi=0;zi<9;zi++){const z=zones[zi],n=zi===8?40:7;for(let k=0;k<n*4&&k<200;k++){const gx=z.x0+2+Math.floor(rand()*(ZW-4)),gy=z.y0+2+Math.floor(rand()*(ZH-4));if(!free(gx,gy))continue;let nearPath=false;for(const [ax,ay] of[[1,0],[-1,0],[0,1],[0,-1]])if(G[idx(gx+ax,gy+ay)]===2)nearPath=true;if(nearPath)continue;const r=rand();
+ if(r<.5)addTree(gx,gy);else if(r<.82){addObj(world,BUSH,gx*16-1,gy*16+3,gy*16+16);setSolid(gx,gy,3);}else{addObj(world,ROCK,gx*16,gy*16+4,gy*16+16);setSolid(gx,gy,3);}}}
+for(let i=0;i<N;i++)if(G[i]===1&&!solid[i]){const th=ZTHEME[ZID[i]];if(hash(i,5,9)<(th==='meadow'?.38:th==='autumn'?.03:.08))G[i]=3;}
+for(let i=0;i<N;i++){if(!G[i]){mm[i]=0;solid[i]=1;}else if(!mm[i])mm[i]=G[i]===2?2:G[i]===5?6:1;}
+/* 황금 도토리: 마을마다 1개. 마을 중심에서 걸어갈 수 있는 칸 중 나무 뒤처럼 잘 가려진 칸을 고름 */
+const GOLD=(()=>{const c=cnv(14,14),x=c.getContext('2d');E(x,7,8.5,4.4,4.6,'#e8b030');E(x,6,7.5,2,2.5,'#ffe48a');R(x,2,3,10,3,'#b8862a');R(x,3,2,8,1,'#d8a840');R(x,6,0,2,2,'#8a6020');return outline(c);})();
+const goldens=[];
+for(let zi=0;zi<8;zi++){const z=zones[zi],[hx,hy]=gl(zi,10,9),seen=new Map([[hx+','+hy,0]]),q=[[hx,hy]];let best=null,bs=-1;
+ while(q.length){const [x,y]=q.shift(),dep=seen.get(x+','+y);
+  if(G[idx(x,y)]!==2&&G[idx(x,y)]!==5&&!resv[idx(x,y)]){const hid=(mm[idx(x,y+1)]===3?20:0)+(mm[idx(x-1,y)]===3?3:0)+(mm[idx(x+1,y)]===3?3:0),sc=hid+Math.min(dep,14)+hash(x,y,zi+70);if(sc>bs){bs=sc;best=[x,y];}}
+  for(const [dx,dy] of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(seen.has(k)||nx<z.x0||ny<z.y0||nx>=z.x0+ZW||ny>=z.y0+ZH||solid[idx(nx,ny)])continue;seen.set(k,dep+1);q.push([nx,ny]);}}
+ const [tx,ty]=best;goldens.push({zi,tx,ty,obj:addObj(world,GOLD,tx*16+1,ty*16+1,ty*16+12)});}
+
+/* 바깥 지면 미리 그리기 (물결 2프레임, 마을별 테마 색) */
+const land=(x,y)=>inb(x,y)&&G[idx(x,y)]>0;
+function paintGround(frame){const W=MW*16,H=MH*16,c=cnv(W,H),x=c.getContext('2d'),img=x.createImageData(W,H),d=img.data;
+ const C=s=>hex(s),sp=(X,Y,c)=>{if(X<0||Y<0||X>=W||Y>=H)return;const i=(Y*W+X)*4;d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;};
+ const GR={plain:[C('#67ad49'),C('#579a3e'),C('#7cc25a'),C('#4c8a36')],market:[C('#6fb04a'),C('#5c9a3c'),C('#86c45e'),C('#4c8a36')],bank:[C('#62a64a'),C('#52923e'),C('#78ba5c'),C('#4c8a36')],autumn:[C('#a3ae4e'),C('#8c9a40'),C('#bcc464'),C('#7a8a36')],meadow:[C('#70b850'),C('#5ea442'),C('#88cc66'),C('#4c8a36')]};
+ const PB=C('#d9b47c'),PD=C('#c69e66'),PL=C('#e8c993'),PS=C('#a8875a'),SB=C('#bdb8ae'),SG=C('#8f8a82'),SL=C('#d4d0c8'),WB=C('#3d7fc0'),WD=C('#3672b0'),WL=C('#73b3e8'),DT=C('#8a6440'),DD=C('#6e4e30'),DK=C('#4e3420'),FO=C('#d6eef9'),SO=C('#7a5634'),SF=C('#5e4026'),SPR1=C('#6cbc55'),SPR2=C('#4f9a3f'),CAR=C('#e38a3c'),LF=[C('#d9822b'),C('#c8502e'),C('#e0b03a')];
+ const flowerCols=[C('#ffffff'),C('#f6e27a'),C('#f3a6b5'),C('#c9b6f0'),C('#f7b267')];
+ for(let ty=0;ty<MH;ty++)for(let tx=0;tx<MW;tx++){const i=idx(tx,ty),g=G[i],ox=tx*16,oy=ty*16,th=ZTHEME[ZID[i]]||'plain',gr=GR[th]||GR.plain;
+  if(g===0){for(let py=0;py<16;py++)for(let px=0;px<16;px++)sp(ox+px,oy+py,hash(ox+px,oy+py,1)<.06?WD:WB);
+   for(let k=0;k<3;k++){const wx=Math.floor(hash(tx,ty,k)*12+frame*3)%13,wy=Math.floor(hash(tx,ty,k+7)*14);for(let q=0;q<3;q++)sp(ox+wx+q,oy+wy,WL);}
+   if(land(tx,ty-1)){for(let px=0;px<16;px++){for(let py=0;py<4;py++)sp(ox+px,oy+py,py===3?DK:hash(ox+px,oy+py,2)<.3?DD:DT);if(hash(ox+px,oy,3+frame)<.75)sp(ox+px,oy+4,FO);if(hash(ox+px,oy,4+frame)<.25)sp(ox+px,oy+5,FO);}}
+   if(land(tx,ty+1))for(let px=0;px<16;px++){if(hash(ox+px,oy,5+frame)<.7)sp(ox+px,oy+15,FO);}
+   if(land(tx-1,ty))for(let py=0;py<16;py++){if(hash(ox,oy+py,6+frame)<.7)sp(ox,oy+py,FO);}
+   if(land(tx+1,ty))for(let py=0;py<16;py++){if(hash(ox,oy+py,7+frame)<.7)sp(ox+15,oy+py,FO);}
+   continue;}
+  if(g===2){const stone=th==='bank';
+   for(let py=0;py<16;py++)for(let px=0;px<16;px++){const h=hash(ox+px,oy+py,8);if(stone){const row=Math.floor(py/8),gx=(px+(row%2)*4)%8;sp(ox+px,oy+py,py%8===0||gx===0?SG:h<.12?SL:SB);}else sp(ox+px,oy+py,h<.1?PD:h<.15?PL:PB);}
+   if(!stone)for(let k=0;k<2;k++){const px=1+Math.floor(hash(tx,ty,k+20)*13),py=1+Math.floor(hash(tx,ty,k+30)*14);sp(ox+px,oy+py,PS);sp(ox+px+1,oy+py,PS);}
+   const notPath=(x,y)=>inb(x,y)&&G[idx(x,y)]!==2&&G[idx(x,y)]!==0;
+   for(let k=0;k<16;k++){const dep=hash(tx*16+k,ty,9)<.5?1:2;if(notPath(tx,ty-1))for(let q=0;q<dep;q++)sp(ox+k,oy+q,gr[0]);if(notPath(tx,ty+1))for(let q=0;q<dep;q++)sp(ox+k,oy+15-q,gr[0]);if(notPath(tx-1,ty))for(let q=0;q<dep;q++)sp(ox+q,oy+k,gr[0]);if(notPath(tx+1,ty))for(let q=0;q<dep;q++)sp(ox+15-q,oy+k,gr[0]);}
+  }else if(g===5){for(let py=0;py<16;py++)for(let px=0;px<16;px++)sp(ox+px,oy+py,py%4===3?SF:hash(ox+px,oy+py,11)<.1?SF:SO);
+   for(let k=0;k<4;k++){const px=2+k*4,py=1+((tx+k)%2)*4;if((tx+ty)%2){sp(ox+px,oy+py+1,SPR1);sp(ox+px-1,oy+py,SPR1);sp(ox+px+1,oy+py,SPR1);sp(ox+px,oy+py,SPR2);}else{sp(ox+px,oy+py+1,CAR);sp(ox+px,oy+py+2,CAR);sp(ox+px-1,oy+py,SPR1);sp(ox+px+1,oy+py,SPR1);}
+    const py2=py+8;if(py2<15){sp(ox+px,oy+py2,SPR1);sp(ox+px-1,oy+py2-1,SPR2);sp(ox+px+1,oy+py2-1,SPR2);}}
+  }else{for(let py=0;py<16;py++)for(let px=0;px<16;px++){const h=hash(ox+px,oy+py,10);sp(ox+px,oy+py,h<.08?gr[1]:h<.13?gr[2]:gr[0]);}
+   for(let k=0;k<2;k++){if(hash(tx,ty,k+40)<.6){const bx=1+Math.floor(hash(tx,ty,k+41)*12),by=2+Math.floor(hash(tx,ty,k+42)*12);sp(ox+bx,oy+by+1,gr[1]);sp(ox+bx+1,oy+by,gr[1]);sp(ox+bx+2,oy+by+1,gr[1]);}}
+   if(th==='autumn')for(let k=0;k<3;k++){if(hash(tx,ty,k+60)<.5){const lx=1+Math.floor(hash(tx,ty,k+61)*14),ly=1+Math.floor(hash(tx,ty,k+62)*14),lc=LF[k%3];sp(ox+lx,oy+ly,lc);sp(ox+lx+1,oy+ly,lc);}}
+   if(g===3)for(let k=0;k<(th==='meadow'?3:2);k++){const fx=2+Math.floor(hash(tx,ty,k+50)*11),fy=2+Math.floor(hash(tx,ty,k+51)*11),col=flowerCols[Math.floor(hash(tx,ty,k+52)*5)];sp(ox+fx,oy+fy-1,col);sp(ox+fx-1,oy+fy,col);sp(ox+fx+1,oy+fy,col);sp(ox+fx,oy+fy+1,col);sp(ox+fx,oy+fy,C('#f2c14e'));}
+   if(!land(tx,ty+1))for(let px=0;px<16;px++)sp(ox+px,oy+15,gr[3]);}
+ }
+ x.putImageData(img,0,0);return c;}
+world.ground=[paintGround(0),paintGround(1)];
+const MMIMG=(()=>{const c=cnv(MW,MH),x=c.getContext('2d'),cols=['#3d7fc0','#67ad49','#d9b47c','#2f6b2e','#b5533a','#f2c14e','#7a5634'];for(let y=0;y<MH;y++)for(let X=0;X<MW;X++)P(x,X,y,cols[mm[idx(X,y)]]);return c;})();
+
+/* ================= 실내 ================= */
+const RW=13,RH=10;
+const LAYOUT={
+ hall:{floor:'wood',wall:'#e8d8b0',decor:[['board',1,3],['window',5,3],['map',9,3]],items:[['shelf',1,2],['shelf',11,2],['plant',1,8],['plant',11,8],['counter',5,4,3,'papers']],relay:[[5,4],[6,4],[7,4]],npc:[6,3],rug:[4,6,5,2,'#b5533a']},
+ office:{floor:'tile',tile:['#e8e6e0','#d8d6cf'],wall:'#dfe6ec',decor:[['window',1,3],['clock',6,1],['window',9,3]],items:[['counter',5,4,3,'papers'],['desk',1,6,2],['desk',10,6,2],['cooler',11,2],['plant',1,2],['plant',11,8]],relay:[[5,4],[6,4],[7,4]],npc:[6,3]},
+ market:{floor:'straw',wall:'#fff3ea',curtain:1,decor:[],items:[['basket',3,2,1,'#c8643c'],['basket',4,2,1,'#3d6b9e'],['basket',5,2,1,'#f2c14e'],['basket',6,2,1,'#e0574a'],['basket',7,2,1,'#b0a9d0'],['basket',8,2,1,'#5aa848'],['basket',9,2,1,'#e8eef2'],['counter',3,4,7,'register'],['crate',1,6],['crate',11,6],['crate',1,7],['plant',11,8]],relay:[[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4]],npc:[6,3]},
+ bank:{floor:'stone',wall:'#f3eee2',decor:[['clock',2,1],['window',4,2],['vault',8,4]],items:[['glass',2,4,9],['seat',2,7,2],['seat',9,7,2],['plant',1,8],['plant',11,8],['stanchion',5,6],['stanchion',7,6]],relay:[[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4]],npc:[6,3]},
+ tower:{floor:'carpet',wall:'#b0a9d0',decor:[['chalk',3,7]],items:[['shelf',1,2],['shelf',2,2],['shelf',10,2],['shelf',11,2],['counter',5,5,3,'papers'],['globe',9,6],['plant',1,8]],relay:[[5,5],[6,5],[7,5]],npc:[6,4]},
+ shop:{floor:'tile',tile:['#f8e2e6','#f0ccd4'],wall:'#f6c9d0',decor:[['window',1,3],['frame',9,2]],items:[['counter',5,4,3,'register'],['rack',1,3,2],['rack',10,3,2],['mannequin',3,6],['mannequin',9,6],['plant',11,8]],relay:[[5,4],[6,4],[7,4]],npc:[6,3]},
+ repair:{floor:'concrete',wall:'#c9d6c2',decor:[['tools',1,4],['tools',8,4]],items:[['bench',4,4,5],['crate',1,7],['crate',11,7],['crate',11,6],['plant',1,2]],relay:[[4,4],[5,4],[6,4],[7,4],[8,4]],npc:[6,3]},
+ exchange:{floor:'tile',tile:['#e4e8f0','#d2d8e4'],wall:'#d9e2ea',decor:[['ticker',1,4],['clock',6,1],['ticker',8,4]],items:[['counter',5,4,3,'papers'],['desk',1,6,2],['desk',10,6,2],['seat',4,7,2],['plant',1,2],['plant',11,8]],relay:[[5,4],[6,4],[7,4]],npc:[6,3]},
+ home:{floor:'wood',wall:'#f3dcc0',decor:[['window',4,3],['frame',9,2]],items:[['bed',1,2,1],['shelf',11,2],['desk',8,3,2],['plant',1,8]],desk:[[8,3],[9,3]],rug:[4,5,5,3,'#5b8ac8']}
+};
+function paintInterior(L){const W=RW*16,H=RH*16,c=cnv(W,H),x=c.getContext('2d');
+ R(x,0,0,W,H,'#0d0f1a');
+ for(let ty=2;ty<=8;ty++)for(let tx=1;tx<=11;tx++){const ox=tx*16,oy=ty*16;
+  if(L.floor==='wood'){R(x,ox,oy,16,16,'#b07a48');for(let r=0;r<4;r++){R(x,ox,oy+r*4+3,16,1,'#8a5a36');R(x,ox+((tx*3+r*7+ty)%16),oy+r*4,1,3,'#8a5a36');}P(x,ox+(tx*5)%14,oy+(ty*3)%14,'#c48c58');}
+  else if(L.floor==='tile'){for(let q=0;q<4;q++)R(x,ox+(q%2)*8,oy+Math.floor(q/2)*8,8,8,L.tile[(q+(q>1?1:0))%2]);R(x,ox,oy,16,1,tone(L.tile[1],-.08));R(x,ox,oy,1,16,tone(L.tile[1],-.08));}
+  else if(L.floor==='stone'){R(x,ox,oy,16,16,'#d0ccc4');R(x,ox,oy,16,1,'#a8a49b');R(x,ox,oy+8,16,1,'#a8a49b');R(x,ox+(ty%2?4:12),oy,1,8,'#a8a49b');R(x,ox+(ty%2?12:4),oy+8,1,8,'#a8a49b');P(x,ox+3,oy+3,'#e0dcd4');}
+  else if(L.floor==='carpet'){R(x,ox,oy,16,16,'#6a4a8a');if((tx+ty)%2)P(x,ox+8,oy+8,'#e8b84a');P(x,ox+(tx*7)%16,oy+(ty*5)%16,'#5a3a7a');}
+  else if(L.floor==='straw'){R(x,ox,oy,16,16,'#d8b868');for(let k=0;k<10;k++)R(x,ox+Math.floor(hash(tx,ty,k)*14),oy+Math.floor(hash(ty,tx,k)*15),2,1,'#c4a050');}
+  else{R(x,ox,oy,16,16,'#a8aaa6');for(let k=0;k<8;k++)P(x,ox+Math.floor(hash(tx,ty,k+3)*16),oy+Math.floor(hash(ty,tx,k+5)*16),'#9a9c98');}}
+ if(L.rug){const [rx,ry,rw,rh,col]=L.rug;R(x,rx*16+2,ry*16+2,rw*16-4,rh*16-4,col);R(x,rx*16+5,ry*16+5,rw*16-10,rh*16-10,tone(col,.25));R(x,rx*16+7,ry*16+7,rw*16-14,rh*16-14,col);}
+ R(x,16,0,W-32,32,L.wall);R(x,16,0,W-32,3,tone(L.wall,-.35));for(let px=16;px<W-16;px+=8)R(x,px,3,1,25,tone(L.wall,-.07));
+ if(L.curtain)wallDecor(x,'curtain',16,11);
+ R(x,16,27,W-32,5,'#6e4a2a');R(x,16,27,W-32,1,'#8a6440');
+ (L.decor||[]).forEach(([t,tx,w])=>wallDecor(x,t,tx*16,w));
+ R(x,16,32,W-32,3,'rgba(0,0,0,.18)');
+ R(x,0,0,16,H,'#2a2438');R(x,W-16,0,16,H,'#2a2438');R(x,14,32,2,H-48,'#4a4060');R(x,W-16,32,2,H-48,'#4a4060');
+ R(x,0,H-16,W,16,'#2a2438');R(x,16,H-18,W-32,2,'#4a4060');
+ R(x,6*16,H-16,16,16,'#8a3a2a');for(let y=H-14;y<H-2;y+=3)R(x,6*16+2,y,12,1,'#a8503a');R(x,6*16,H-18,16,2,'#8a3a2a');
+ return c;}
+const interiors={};
+buildings.forEach(B=>{if(B.kind==='bigtree')return;const L=LAYOUT[B.kind],m=newMap('in-'+B.kind,RW,RH,{bg:'#0d0f1a',building:B,exit:[6,9],name:B.label});
+ for(let y=0;y<RH;y++)for(let x=0;x<RW;x++){m.G[y*RW+x]=1;if(y<=1||x===0||x===RW-1||(y===RH-1&&x!==6))m.solid[y*RW+x]=1;}
+ L.items.forEach(([type,tx,ty,w=1,arg])=>{const spr=furn(type,w,arg),h=type==='bed'?2:1;addObj(m,spr,tx*16+(w*16-spr.width)/2,(ty+h)*16-spr.height+(type==='basket'?0:0),(ty+h)*16);for(let yy=ty;yy<ty+h;yy++)for(let xx=tx;xx<tx+w;xx++)m.solid[yy*RW+xx]=1;});
+ const s=spots[B.spot];s.map=m;
+ const it={verb:s.verb,name:s.title,run:()=>talkSpot(s)};
+ if(L.npc){const n=makeNpc(s.npc,L.npc[0],L.npc[1]);n.it={...it,npc:n};m.npcs.push(n);s.tx=n.tx;s.ty=n.ty;s.npcObj=n;(L.relay||[]).forEach(([rx,ry])=>m.inter.set(rx+','+ry,{...it,npc:n}));}
+ else{(L.desk||[]).forEach(([dx,dy])=>m.inter.set(dx+','+dy,it));s.tx=L.desk[0][0];s.ty=L.desk[0][1];}
+ m.ground=[paintInterior(L)];B.interior=m;interiors[B.kind]=m;});
+
+/* ================= 상태·UI ================= */
+const $=id=>document.getElementById(id);
+const panelEl=$('panel'),dialogEl=$('dialog'),actBtn=$('act'),toastEl=$('toast'),fadeEl=$('fade');
+let panelOpen=false,titleOpen=true,dlg=null,near=null,seen={},fading=false,cut=null,endingOpen=false;
+const pendingBridges=[];
+const locked=()=>panelOpen||!!dlg||titleOpen||fading||!!cut||endingOpen;
+/* 보너스 도토리 = 퀴즈 5개씩 + 황금 도토리 5개씩. 상점은 이 도토리만 씀 */
+const bonusScore=()=>Object.values(state.bonus).filter(Boolean).length*5+state.golden.length*5;
+const bonusSpent=()=>sum(state.shop.owned.map(id=>SHOP.find(i=>i.id===id).price));
+const wallet=()=>bonusScore()-bonusSpent();
+function refreshHUD(){$('hud-score').textContent=totalScore();const bs=wallet(),hb=$('hud-bonus');hb.hidden=!bs;hb.textContent='보너스 '+bs;$('hud-step').textContent=state.step===0?'시작':`${state.step}/${LAST} ${names[state.step]}`;$('hud-obj').textContent='▶ '+objective();$('hud-terms').textContent=`${state.terms.length}/${terms.length}`;}
+let toastTimer;function toast(msg){if(!msg)return;toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2800);}
+function popup(text){const el=document.createElement('div');el.className='pop px';el.innerHTML=`<i class="acorn"></i>${esc(text)}`;document.body.appendChild(el);setTimeout(()=>el.remove(),1400);}
+function onEarn(points){popup('+'+points);if(points>=15)Snd.play('correct');else Snd.play('wrong');setTimeout(()=>Snd.play('coin'),380);}
+function fade(mid){clearInput();if(reduced.matches){mid();return;}fading=true;fadeEl.style.opacity=1;setTimeout(()=>{mid();fadeEl.style.opacity=0;setTimeout(()=>{fading=false;},260);},270);}
+
+/* 대화 (타자 효과·선택지) */
+const dText=dialogEl.querySelector('.dtext'),dName=dialogEl.querySelector('.dname'),dChoices=dialogEl.querySelector('.choices'),dNext=dialogEl.querySelector('.dnext');
+function showDialog(name,lines,done,owner){clearInput();dlg={lines,i:0,shown:0,done,owner};dName.textContent=name;dText.textContent='';dChoices.hidden=true;dNext.hidden=true;dialogEl.hidden=false;actBtn.hidden=true;near=null;if(owner)owner.talking=true;Snd.play('blip');}
+function showChoice(name,q,choices,cb,owner){clearInput();dlg={lines:[q],i:0,shown:0,choice:{choices,cb,sel:0},owner};dName.textContent=name;dText.textContent='';dChoices.hidden=true;dNext.hidden=true;dialogEl.hidden=false;actBtn.hidden=true;near=null;if(owner)owner.talking=true;
+ dChoices.innerHTML=choices.map((c,i)=>`<button type="button" data-ci="${i}">${esc(c)}</button>`).join('');}
+function lineDone(){return dlg&&dlg.shown>=dlg.lines[dlg.i].length;}
+function showFull(){dlg.shown=dlg.lines[dlg.i].length;dText.textContent=dlg.lines[dlg.i];afterLine();}
+function afterLine(){dialogAnnounce.textContent=dlg.lines[dlg.i];if(dlg.choice){dChoices.hidden=false;markSel();}else dNext.hidden=false;}
+function markSel(){[...dChoices.children].forEach((b,i)=>b.classList.toggle('sel',i===dlg.choice.sel));}
+function closeDialog(){const d=dlg;dlg=null;dialogEl.hidden=true;if(d.owner)d.owner.talking=false;return d;}
+function advanceDialog(){if(!dlg)return;if(!lineDone()){showFull();return;}if(dlg.choice)return;Snd.play('blip');dlg.i++;dlg.shown=0;dNext.hidden=true;if(dlg.i>=dlg.lines.length){const d=closeDialog();if(d.done)d.done();}}
+function pickChoice(i){if(!dlg||!dlg.choice||!lineDone())return;const d=closeDialog();d.choice.cb(i);}
+dialogEl.addEventListener('click',e=>{const b=e.target.closest('button[data-ci]');if(b){pickChoice(+b.dataset.ci);return;}advanceDialog();});
+function updateDialog(dt){if(!dlg||lineDone())return;if(reduced.matches){showFull();return;}const L=dlg.lines[dlg.i],before=Math.floor(dlg.shown);dlg.shown=Math.min(L.length,dlg.shown+dt*38);const now=Math.floor(dlg.shown);if(now!==before){dText.textContent=L.slice(0,now);if(now%3===0&&L[now-1]!==' ')Snd.play('blip');}if(lineDone())afterLine();}
+
+function openPanel(){clearInput();panelOpen=true;panelEl.hidden=false;actBtn.hidden=true;near=null;render();panelEl.scrollTop=0;Snd.play('select');}
+function closePanel(){clearInput();panelOpen=false;panelEl.hidden=true;root.innerHTML='';refreshHUD();}
+$('panel-close').addEventListener('click',()=>{Snd.play('select');closePanel();});
+function openGlossary(){if(dlg||titleOpen)return;panelOpen=true;panelEl.hidden=false;actBtn.hidden=true;near=null;const n=state.terms.length;root.innerHTML=`<div class="top"><span class="kicker">용어 도감</span><span class="badge">${n} / ${terms.length}</span></div><h2>마을에서 모은 용어</h2><p class="small">마을 곳곳의 노란 표지판을 읽으면 채워져요.</p>${terms.map((t,i)=>state.terms.includes(i)?`<div class="term"><h3>${esc(t.t)}</h3><p>${esc(t.d)}</p></div>`:`<div class="term"><h3>???</h3><p class="small">${zoneNames[t.z]} 어딘가의 표지판</p></div>`).join('')}`;panelEl.scrollTop=0;Snd.play('select');}
+$('btn-glossary').addEventListener('click',openGlossary);
+function shopHTML(){const row=i=>{const own=state.shop.owned.includes(i.id),on=state.shop[i.slot]===i.id,can=wallet()>=i.price;return `<div class="shop-item"><span>${esc(i.name)}<br><span class="small">도토리 ${i.price}개</span></span><button type="button" data-buy="${i.id}" ${!own&&!can?'disabled':''}>${on?'벗기':own?'착용':'구매'}</button></div>`;};
+ return `<div class="top"><span class="kicker">도토리 상점</span><span class="badge">보너스 ${wallet()}개</span></div><h2>다람이 꾸미기</h2><img class="shop-view" src="${SPR.player.down[0].toDataURL()}" alt="꾸민 다람이"><p class="small">보너스 퀴즈와 황금 도토리로 모은 도토리만 써요. 미션 도토리는 줄지 않아요.</p>${SHOP.map(row).join('')}`;}
+function openShop(){if(dlg||titleOpen||locked())return;panelOpen=true;panelEl.hidden=false;actBtn.hidden=true;near=null;root.innerHTML=shopHTML();panelEl.scrollTop=0;Snd.play('select');}
+function buyItem(id){const i=SHOP.find(x=>x.id===id),s=state.shop;if(!s.owned.includes(id)){if(wallet()<i.price)return;s.owned.push(id);s[i.slot]=id;Snd.play('coin');}else s[i.slot]=s[i.slot]===id?null:id;rebuildPlayer();persist();refreshHUD();root.innerHTML=shopHTML();}
+$('btn-shop').addEventListener('click',openShop);
+function refreshGolden(){goldens.forEach((g,i)=>{g.obj.hidden=state.golden.includes(i);});}
+function checkGolden(){if(player.map!==world)return;goldens.forEach((g,i)=>{if(g.tx!==player.tx||g.ty!==player.ty||state.golden.includes(i))return;state.golden.push(i);persist();refreshGolden();refreshHUD();Snd.play('correct');setTimeout(()=>Snd.play('coin'),380);popup('보너스 +5');toast(`황금 도토리 발견! (${state.golden.length}/${goldens.length})`);});}
+/* 10년 뒤 엔딩: 월 저축 예산 ÷ 목표에 필요한 월 저축액 */
+function endingInfo(){const need=sum(state.goals.map(g=>Calc.goal(g.amount,g.months))),m=amounts()[5],rate=need?m/need*100:100,tier=rate>=100?3:rate>=50?2:1;return {need,m,rate,tier,total:Calc.future(m,Assumptions.futureRate).net};}
+const END_TEXT={3:['월 저축이 목표 필요액을 충족해요!','그림은 월 저축 충족률을 나타내는 상징이에요. 미래 목표 달성을 보장하지 않아요.','다음에는 어떤 목표를 세워 볼까요?'],2:['월 저축 필요액의 절반 이상을 준비해요','그림은 월 저축 충족률을 나타내요. 실제 자산 달성률은 아니에요.','목표 금액을 줄이거나 월 저축을 조정해 보세요.'],1:['다시 계획해 봐요','작은 집에서 새로 시작해요. 실패가 아니라 계획을 고칠 기회예요.','목표 금액이나 월 저축을 내 소득에 맞게 조정해 볼까요?']};
+function drawEnding(tier){const x=$('end-scene').getContext('2d');x.imageSmoothingEnabled=false;x.clearRect(0,0,240,140);
+ R(x,0,0,240,104,{3:'#9fd8f5',2:'#b8dcea',1:'#f2c9a0'}[tier]);E(x,tier===1?200:30,tier===1?74:24,12,12,tier===1?'#f08a4a':'#ffe48a');
+ R(x,0,102,240,38,'#67ad49');for(let i=0;i<70;i++)P(x,Math.floor(hash(i,1)*240),102+Math.floor(hash(i,2)*38),i%2?'#579a3e':'#7cc25a');
+ const put=(s,a,b)=>x.drawImage(s,a,b);
+ put(TREES[0],8,72);put(TREES[3],206,68);
+ if(tier===3){const h=building('hall',5,4);put(h,90,106-h.height);put(TREES[1],180,74);for(let i=0;i<6;i++)put(ACORN,118+(i%3)*11,120-Math.floor(i/3)*8);put(SPR.kid.down[0],176,104);put(SPR.duck.down[0],40,108);}
+ else if(tier===2){const h=building('home',5,4);put(h,90,106-h.height);R(x,84,44,2,62,'#8a5a36');R(x,172,44,2,62,'#8a5a36');R(x,84,60,90,2,'#a87a4a');for(let i=0;i<3;i++)put(ACORN,118+i*11,120);put(SPR.kid.down[0],184,106);}
+ else{for(let y=0;y<34;y++){const hw=Math.round(y*.7)+1;R(x,120-hw,70+y,hw,1,'#c8a070');R(x,120,70+y,hw,1,'#a87a4a');}R(x,116,88,8,16,'#4a2e1a');R(x,160,96,2,10,'#7a5030');E(x,161,93,5,4,'#6cbc55');put(ACORN,70,118);}
+ put(SPR.player.down[0],tier===1?86:66,tier===3?98:100);}
+function playEnding(){const e=endingInfo(),t=END_TEXT[e.tier];endingOpen=true;Snd.play('fanfare');fade(()=>{$('ending').hidden=false;$('end-body').hidden=true;drawEnding(e.tier);$('end-title').textContent=t[0];$('end-rate').textContent=`월 저축 ${won(e.m)} / 목표에 필요한 월 저축 ${won(e.need)} · 월 저축 충족률 ${Math.round(e.rate)}%`;$('end-text').textContent=`10년 저축 전망은 ${won(e.total)}이에요. ${t[1]} ${MODEL_NOTE}`;$('end-next').textContent=t[2];setTimeout(()=>{$('end-body').hidden=false;Snd.play('chime');},1100);});}
+function closeEnding(then){$('ending').hidden=true;endingOpen=false;then();}
+$('end-cert').addEventListener('click',()=>closeEnding(()=>{openPanel();toast('수료증을 받았어요');}));
+$('end-edit').addEventListener('click',()=>closeEnding(()=>{state.complete=false;persist();openPanel();}));
+function talkSpot(s){
+ if(state.step<s.step){showDialog(s.title,['아직은 때가 아니야.','지금 목표: '+objective()],null,s.npcObj);return;}
+ if(state.step>s.step){showDialog(s.title,['잘했어! 배운 내용은 마지막 재무계획서에 모두 담길 거야.','지금 목표: '+objective()],null,s.npcObj);return;}
+ if(seen[s.step])openPanel();else showDialog(s.title,s.lines,()=>{seen[s.step]=true;openPanel();},s.npcObj);}
+function talkResident(ri){const r=residents[ri],n=r.npc;
+ if(state.bonus[ri]){showDialog(r.name,[r.lines[0],'문제도 맞혔으니 이제 너는 돈 박사야!'],null,n);return;}
+ showDialog(r.name,r.lines,()=>showChoice(r.name,r.q.q,r.q.c,i=>{
+  if(i===r.q.a){state.bonus[ri]=true;persist();refreshHUD();Snd.play('correct');setTimeout(()=>Snd.play('coin'),380);popup('보너스 +5');showDialog(r.name,['정답이야! '+r.q.e],null,n);}
+  else{Snd.play('wrong');showDialog(r.name,['아쉽다! 힌트: '+BONUS_HINT[ri],'다시 말을 걸면 또 도전할 수 있어.'],null,n);}},n),n);}
+/* 틀렸을 때 정답을 가리고 풀이 방향만 알려 주는 힌트 */
+const BONUS_HINT=['명세서에서 "공제"라는 칸을 떠올려 봐.','세전 월급에 5%, 곧 0.05를 곱해 봐.','저축의 비율은 세 수 중 마지막 수야. 그 비율을 곱해 봐.','1＋12, 2＋11처럼 짝을 지으면 13이 몇 쌍 나올까?','전체 금액을 할부 개월 수로 나눠 봐.','한 달 생활비에 3과 6을 각각 곱해 봐.','72를 연이율 숫자로 나눠 봐.'];
+function readSign(i){const t=terms[i],isNew=!state.terms.includes(i);showDialog('용어 표지판 · '+t.t,[t.d],()=>{if(isNew){state.terms.push(i);persist();refreshSigns();refreshHUD();Snd.play('coin');toast(`용어 도감에 추가! (${state.terms.length}/${terms.length})`);}});}
+function refreshSigns(){terms.forEach((t,i)=>{t.obj.spr=SIGN[state.terms.includes(i)?1:0];});}
+function syncBridges(animate){bridges.forEach(b=>{const want=state.step>=b.step;if(want&&b.st==='locked'){if(animate){b.st='pending';pendingBridges.push(b);}else{b.st='done';b.t=b.dur;}}else if(!want){b.st='locked';b.t=0;}});}
+function stepChanged(){if(textMode){syncBridges(false);refreshHUD();openPanel();return;}syncBridges(true);refreshHUD();const b=bridges.find(b=>b.step===state.step);
+ if(b)toast(player.map===world?'새 다리가 놓여요!':'밖으로 나가면 새 다리가 놓여 있을 거예요!');else if(state.step===4)toast('은행 옆 복리관 문이 열렸어요!');else if(state.step===6)toast('증권소 옆 카드가게 문이 열렸어요!');}
+function resetWorld(){clearInput(true);seen={};pendingBridges.length=0;cut=null;syncBridges(false);refreshSigns();refreshGolden();rebuildPlayer();refreshHUD();spawn();toast('처음부터 다시 시작해요');}
+
+/* 건물 출입 */
+function enterBuilding(B){Snd.play('door');fade(()=>{const m=B.interior;Object.assign(player,{map:m,tx:6,ty:8,x:96,y:128,dir:'up',moving:false});snapCam();toast(B.label);});}
+function leaveBuilding(){const B=player.map.building;Snd.play('door');fade(()=>{const [dx,dy]=B.door;Object.assign(player,{map:world,tx:dx,ty:dy+1,x:dx*16,y:(dy+1)*16,dir:'down',moving:false});snapCam();});}
+
+/* ================= 플레이어·주민 이동 ================= */
+const DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+const player={map:world,tx:0,ty:0,x:0,y:0,dir:'down',moving:false,nx:0,ny:0,t:0,steps:0,run:false};
+function npcBlock(m,x,y,except){for(const n of m.npcs){if(n===except)continue;if((n.tx===x&&n.ty===y)||(n.moving&&n.nx===x&&n.ny===y))return true;}return false;}
+function solidAt(m,x,y,except){if(x<0||y<0||x>=m.W||y>=m.H)return true;if(m===world){const b=bridgeAt.get(x+','+y);if(b)return b.st!=='done';}if(m.solid[y*m.W+x])return true;return npcBlock(m,x,y,except);}
+function spawn(){const step=Math.min(state.step,LAST),B=spots[step].building;let gx,gy,dir='up';
+ if(step===0){[gx,gy]=gl(0,4,12);}else{const b=bridges.find(b=>b.b===B.z);let [ox,oy]=b.openB;const [lx,ly]=toLocal(B.z,[ox,oy]);if(lx===0){ox++;dir='right';}else if(lx===ZW-1){ox--;dir='left';}else if(ly===0){oy++;dir='down';}else{oy--;dir='up';}gx=ox;gy=oy;}
+ Object.assign(player,{map:world,tx:gx,ty:gy,x:gx*16,y:gy*16,dir,moving:false,t:0});snapCam();}
+const held=[];let jdir=null,shiftRun=false,runToggle=false;
+const keyDir={KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
+function inputDir(){if(locked())return null;return held.length?held[held.length-1]:jdir;}
+let bumpCool=0;
+function updatePlayer(dt){const m=player.map,MT=(shiftRun||runToggle)?.085:.155;
+ if(player.moving){player.t+=dt/MT;if(player.t>=1){player.tx=player.nx;player.ty=player.ny;player.moving=false;player.steps++;player.t=0;Snd.play('step');checkGolden();
+   if(m.exit&&player.tx===m.exit[0]&&player.ty===m.exit[1]){player.x=player.tx*16;player.y=player.ty*16;leaveBuilding();return;}}
+  else{player.x=(player.tx+(player.nx-player.tx)*player.t)*16;player.y=(player.ty+(player.ny-player.ty)*player.t)*16;}}
+ if(!player.moving){player.x=player.tx*16;player.y=player.ty*16;const d=inputDir();
+  if(d){player.dir=d;const [dx,dy]=DIRS[d],nx=player.tx+dx,ny=player.ty+dy;if(!solidAt(m,nx,ny)){player.moving=true;player.nx=nx;player.ny=ny;player.t=0;}else if(bumpCool<=0){bumpCool=.35;}}}
+ bumpCool-=dt;}
+function updateNpcs(dt){const m=player.map;for(const n of m.npcs){
+ if(n.moving){n.t+=dt/.4;if(n.t>=1){n.tx=n.nx;n.ty=n.ny;n.moving=false;n.t=0;}n.x=(n.tx+(n.nx-n.tx)*Math.min(1,n.t))*16;n.y=(n.ty+(n.ny-n.ty)*Math.min(1,n.t))*16;continue;}
+ n.x=n.tx*16;n.y=n.ty*16;if(!n.wander||n.talking)continue;n.timer-=dt;if(n.timer>0)continue;n.timer=2+rand()*3.5;
+ const ds=['up','down','left','right'],d=ds[Math.floor(rand()*4)],[dx,dy]=DIRS[d],nx=n.tx+dx,ny=n.ty+dy;n.dir=d;
+ if(Math.abs(nx-n.hx)>1||Math.abs(ny-n.hy)>1)continue;
+ const pBlock=(player.tx===nx&&player.ty===ny)||(player.moving&&player.nx===nx&&player.ny===ny);
+ if(pBlock||solidAt(m,nx,ny,n)||(m===world&&G[idx(nx,ny)]===2&&rand()<.7))continue;
+ n.moving=true;n.nx=nx;n.ny=ny;n.t=0;}}
+function interAt(m,x,y){const it=m.inter.get(x+','+y);if(it&&!(it.lockedBridge&&it.lockedBridge.st!=='locked'))return it;for(const n of m.npcs)if(n.it&&n.tx===x&&n.ty===y)return n.it;return null;}
+function findNear(){const m=player.map,f=DIRS[player.dir],a=interAt(m,player.tx+f[0],player.ty+f[1]);if(a)return a;
+ let best=null,bd=9;for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){if(!x&&!y)continue;const it=interAt(m,player.tx+x,player.ty+y);if(it){const d=Math.abs(x)+Math.abs(y);if(d<bd){bd=d;best=it;}}}return best;}
+function doInteract(){if(dlg){if(dlg.choice&&lineDone()){pickChoice(dlg.choice.sel);return;}advanceDialog();return;}if(locked()||player.moving)return;const it=findNear();if(!it)return;
+ if(it.npc){const n=it.npc,dx=player.tx-n.tx,dy=player.ty-n.ty;n.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
+  const px=-dx,py=-dy;player.dir=Math.abs(px)>Math.abs(py)?(px>0?'right':'left'):(py>0?'down':'up');}
+ it.run();}
+actBtn.addEventListener('click',doInteract);
+
+/* 입력 */
+const isField=t=>t instanceof Element&&!!t.closest('input,textarea,select,button,a,summary,[contenteditable]:not([contenteditable="false"]),[role="button"]');
+addEventListener('keydown',e=>{if(isField(e.target))return;if(panelOpen){if(e.key==='Escape')closePanel();return;}if(titleOpen||endingOpen)return;
+ if(e.key==='Shift')shiftRun=true;
+ if(dlg&&dlg.choice&&lineDone()){const n=dlg.choice.choices.length;if(['ArrowUp','KeyW'].includes(e.code)){dlg.choice.sel=(dlg.choice.sel+n-1)%n;markSel();Snd.play('blip');e.preventDefault();return;}if(['ArrowDown','KeyS'].includes(e.code)){dlg.choice.sel=(dlg.choice.sel+1)%n;markSel();Snd.play('blip');e.preventDefault();return;}}
+ if(['KeyE','Space','Enter'].includes(e.code)){e.preventDefault();if(!e.repeat)doInteract();return;}
+ const d=keyDir[e.code];if(d){e.preventDefault();if(!held.includes(d))held.push(d);}});
+addEventListener('keyup',e=>{if(e.key==='Shift')shiftRun=false;const d=keyDir[e.code];if(d){const i=held.indexOf(d);if(i>=0)held.splice(i,1);}});
+addEventListener('blur',()=>clearInput());document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInput();});
+const joy=$('joy'),knob=$('knob');let joyId=null;
+function updJoy(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R0=48;let dx=e.clientX-cx,dy=e.clientY-cy;const l=Math.hypot(dx,dy);if(l>R0){dx*=R0/l;dy*=R0/l;}knob.style.transform=`translate(${dx}px,${dy}px)`;jdir=l<14?null:Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}
+function endJoy(){joyId=null;jdir=null;knob.style.transform='';}
+joy.addEventListener('pointerdown',e=>{if(joyId!==null||locked())return;joyId=e.pointerId;joy.setPointerCapture(e.pointerId);updJoy(e);e.preventDefault();});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)updJoy(e);});
+joy.addEventListener('pointerup',e=>{if(e.pointerId===joyId)endJoy();});
+joy.addEventListener('pointercancel',e=>{if(e.pointerId===joyId)endJoy();});joy.addEventListener('lostpointercapture',e=>{if(e.pointerId===joyId)endJoy();});
+$('run').addEventListener('click',()=>{runToggle=!runToggle;$('run').classList.toggle('on',runToggle);$('run').textContent=runToggle?'달리는 중':'달리기';Snd.play('select');});
+function soundButtons(){const s=$('btn-sfx'),b=$('btn-bgm');s.classList.toggle('off',!Snd.pref.sfx);s.title=s.ariaLabel='효과음 '+(Snd.pref.sfx?'켜짐':'꺼짐');b.classList.toggle('off',!Snd.pref.bgm);b.title=b.ariaLabel='배경음악 '+(Snd.pref.bgm?'켜짐':'꺼짐');}
+$('btn-sfx').addEventListener('click',()=>{Snd.init();Snd.pref.sfx=!Snd.pref.sfx;Snd.save();soundButtons();Snd.play('select');});
+$('btn-bgm').addEventListener('click',()=>{Snd.init();Snd.pref.bgm=!Snd.pref.bgm;Snd.save();soundButtons();});
+soundButtons();
+
+/* ================= 효과 (입자) ================= */
+const parts=[];
+function addPart(p){parts.push(Object.assign({map:player.map,age:0},p));}
+const butterflies=[];for(let i=0;i<16;i++){let gx,gy,k=0;do{gx=Math.floor(rand()*MW);gy=Math.floor(rand()*MH);k++;}while(k<200&&!(G[idx(gx,gy)]===3||G[idx(gx,gy)]===5));butterflies.push({hx:gx*16+8,hy:gy*16,ph:rand()*6,col:['#ffffff','#f6e27a','#f3a6b5','#9fd3ef'][i%4]});}
+let partTimer={leaf:0,splash:0,smoke:0,glint:0};
+function updateParts(dt,cx,cy,vw,vh){if(reduced.matches){parts.length=0;return;}
+ for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.age+=dt;if(p.age>=p.life){parts.splice(i,1);continue;}p.x+=(p.vx||0)*dt;p.y+=(p.vy||0)*dt;if(p.type==='leaf')p.x+=Math.sin(p.age*3+p.ph)*12*dt;}
+ if(player.map!==world)return;
+ partTimer.glint-=dt;if(partTimer.glint<=0){partTimer.glint=.9;goldens.forEach(g=>{const gx=g.tx*16+8,gy=g.ty*16+6;if(!g.obj.hidden&&gx>cx&&gx<cx+vw&&gy>cy&&gy<cy+vh)addPart({type:'spark',x:gx-4+rand()*8,y:gy-4+rand()*6,life:.6,vy:-6});});}
+ partTimer.leaf-=dt;if(partTimer.leaf<=0){partTimer.leaf=.18;const lx=cx+rand()*vw,ly=cy-4+rand()*vh*.6,z=ZID[idx(Math.floor(lx/16),Math.floor(ly/16))],aut=ZTHEME[z]==='autumn';if(aut||rand()<.12)addPart({type:'leaf',x:lx,y:ly,vx:6,vy:11,life:3.5,ph:rand()*6,col:aut?['#d9822b','#c8502e','#e0b03a'][Math.floor(rand()*3)]:'#7cc25a'});}
+ partTimer.splash-=dt;if(partTimer.splash<=0){partTimer.splash=1.4;for(let k=0;k<10;k++){const tx=Math.floor((cx+rand()*vw)/16),ty=Math.floor((cy+rand()*vh)/16);if(inb(tx,ty)&&!G[idx(tx,ty)]&&!bridgeAt.has(tx+','+ty)&&!land(tx,ty-1)){addPart({type:'splash',x:tx*16+8,y:ty*16+8,life:1.2});break;}}}
+ partTimer.smoke-=dt;if(partTimer.smoke<=0){partTimer.smoke=.5;smokers.forEach(([sx,sy])=>{if(sx>cx-20&&sx<cx+vw+20&&sy>cy-40&&sy<cy+vh+20)addPart({type:'smoke',x:sx+rand()*2,y:sy,vx:4,vy:-9,life:2.4});});}}
+function drawParts(layer,X,Y,S){const ctx2=ctx;for(const p of parts){if(p.map!==player.map)continue;const ground=p.type==='splash';if((layer==='ground')!==ground)continue;const k=p.age/p.life,px=X(p.x),py=Y(p.y);
+ if(p.type==='leaf'){ctx2.fillStyle=p.col;ctx2.globalAlpha=1-Math.max(0,k-.7)/.3;ctx2.fillRect(px,py,2*S,1*S);ctx2.fillRect(px+S,py+S,1*S,1*S);ctx2.globalAlpha=1;}
+ else if(p.type==='splash'){ctx2.fillStyle='#d6eef9';const r=Math.round(2+k*6);ctx2.globalAlpha=1-k;[[r,0],[-r,0],[0,Math.round(r/2)],[0,-Math.round(r/2)],[Math.round(r*.7),Math.round(r*.35)],[-Math.round(r*.7),Math.round(r*.35)],[Math.round(r*.7),-Math.round(r*.35)],[-Math.round(r*.7),-Math.round(r*.35)]].forEach(([dx,dy])=>ctx2.fillRect(px+dx*S,py+dy*S,S,S));ctx2.globalAlpha=1;
+  if(k<.5){const jy=Math.round(-Math.sin(k*2*Math.PI)*7);ctx2.fillStyle='#f08a3a';ctx2.fillRect(px-S,py+jy*S,3*S,2*S);ctx2.fillStyle='#ffffff';ctx2.fillRect(px+S,py+jy*S,S,S);}}
+ else if(p.type==='smoke'){const sz=Math.round(2+k*4);ctx2.fillStyle='#e8e8ec';ctx2.globalAlpha=.75*(1-k);ctx2.fillRect(px-sz*S/2,py-sz*S/2,sz*S,sz*S);ctx2.globalAlpha=1;}
+ else if(p.type==='spark'){ctx2.fillStyle=k<.5?'#fff8c0':'#ffd23f';ctx2.globalAlpha=1-k;const r=k<.3?1:2;ctx2.fillRect(px-S*r,py,S*(2*r+1),S);ctx2.fillRect(px,py-S*r,S,S*(2*r+1));ctx2.globalAlpha=1;}}}
+
+/* ================= 화면 그리기 ================= */
+const cv=$('game'),ctx=cv.getContext('2d');let S=4,dpr=1,vign=null;
+const LABEL_FONT='Galmuri11,"Malgun Gothic",sans-serif';
+function resize(){dpr=Math.min(window.devicePixelRatio||1,3);cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';
+ S=Math.max(1,Math.floor(Math.min(cv.width,cv.height)/(16*11)));
+ vign=cnv(cv.width,cv.height);const v=vign.getContext('2d'),g=v.createRadialGradient(cv.width/2,cv.height/2,Math.min(cv.width,cv.height)*.35,cv.width/2,cv.height/2,Math.hypot(cv.width,cv.height)*.6);g.addColorStop(0,'rgba(12,16,40,0)');g.addColorStop(1,'rgba(12,16,40,.42)');v.fillStyle=g;v.fillRect(0,0,cv.width,cv.height);snapCam();}
+const cam={x:0,y:0};let shake=0;
+function camTarget(){const m=player.map,vw=cv.width/S,vh=cv.height/S,Wp=m.W*16,Hp=m.H*16;let fx=player.x+8,fy=player.y+2;if(cut){const [tx,ty]=cut.b.tiles[Math.floor(cut.b.tiles.length/2)];fx=tx*16+8;fy=ty*16+8;}
+ /* 실내처럼 작은 지도는 위쪽 정보창을 피해 그 아래 빈 공간 가운데에 놓음 */
+ let top=0;if(m!==world){const hb=Math.max($('hud').getBoundingClientRect().bottom,$('mapbox').getBoundingClientRect().bottom)*dpr/S;if(vh-hb>=Hp)top=hb;}
+ let cx=fx-vw/2,cy=fy-vh/2;cx=vw>=Wp?(Wp-vw)/2:Math.max(0,Math.min(Wp-vw,cx));cy=vh-top>=Hp?(Hp-(vh-top))/2-top:Math.max(0,Math.min(Hp-vh,cy));return [cx,cy];}
+function snapCam(){const [x,y]=camTarget();cam.x=x;cam.y=y;}
+addEventListener('resize',resize);resize();
+const mmc=$('minimap'),mctx=mmc.getContext('2d');mmc.width=MW*2;mmc.height=MH*2;
+function targetPos(){const s=spots[state.step];if(player.map===s.map)return [s.tx,s.ty,'here'];if(player.map===world){const B=s.building;return [B.door[0],B.door[1],'door'];}return [player.map.exit[0],player.map.exit[1],'exit'];}
+function drawMinimap(time){mctx.imageSmoothingEnabled=false;mctx.drawImage(MMIMG,0,0,MW*2,MH*2);
+ bridges.forEach(b=>{mctx.fillStyle=b.st==='done'?'#a8733f':'rgba(255,255,255,.55)';b.tiles.forEach(([x,y])=>mctx.fillRect(x*2,y*2,2,2));});
+ if(!state.complete){const B=spots[state.step].building;mctx.fillStyle=Math.floor(time*3)%2?'#ffd23f':'#ffffff';mctx.fillRect(B.door[0]*2-2,B.door[1]*2-2,6,6);}
+ let px=player.x/8,py=player.y/8;if(player.map!==world){const B=player.map.building;px=B.door[0]*2;py=B.door[1]*2+2;}
+ mctx.fillStyle='#e0574a';mctx.fillRect(Math.round(px)-1,Math.round(py)-1,4,4);mctx.fillStyle='#ffffff';mctx.fillRect(Math.round(px),Math.round(py),2,2);}
+function charFrame(moving,t,steps){return moving&&t>.12&&t<.88?(steps%2?1:2):0;}
+function startCut(){if(reduced.matches){pendingBridges.length=0;syncBridges(false);return;}if(cut||player.map!==world||!pendingBridges.length||panelOpen||dlg||fading||titleOpen)return;const b=pendingBridges.shift();cut={b,t:0};b.st='building';b.t=-.7;}
+function updateBridges(dt){bridges.forEach(b=>{if(b.st!=='building')return;const before=b.t;b.t+=dt;for(let i=0;i<b.tiles.length;i++){const land=i*PLANK_DT+.15;if(before<land&&b.t>=land){Snd.play('plank');shake=Math.max(shake,.1);const [tx,ty]=b.tiles[i];for(let k=0;k<3;k++)addPart({type:'spark',x:tx*16+rand()*16,y:ty*16+rand()*16,life:.6,vy:-10});}}
+ if(b.t>=b.dur){b.st='done';b.t=b.dur;Snd.play('chime');shake=.3;}});
+ if(cut){cut.t+=dt;if(cut.b.st==='done'&&cut.t>cut.b.dur+1.6){cut=null;toast('다리가 놓였어요! 화살표를 따라가요');}}}
+let time=0,last=performance.now(),saveT=0;
+function frame(now){requestAnimationFrame(frame);const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;time+=reduced.matches?0:dt;
+ if(!titleOpen&&!state.complete){state.playSec+=dt;saveT+=dt;if(saveT>5){saveT=0;persist();}}
+ updateDialog(dt);updatePlayer(dt);updateNpcs(dt);updateBridges(dt);startCut();
+ if(!locked()){const best=findNear();if(best!==near){near=best;if(near){actBtn.innerHTML=`${esc(near.verb)}<small>${esc(near.name)}</small>`;actBtn.hidden=false;}else actBtn.hidden=true;}}else if(!dlg&&!panelOpen)actBtn.hidden=true;
+ joy.style.visibility=locked()?'hidden':'';$('run').style.visibility=locked()?'hidden':'';
+ drawMinimap(time);
+ if(panelOpen)return;
+ const m=player.map,vw=cv.width/S,vh=cv.height/S;
+ const [tx0,ty0]=camTarget(),k=cut?1-Math.exp(-dt*3.2):1-Math.exp(-dt*16);cam.x+=(tx0-cam.x)*k;cam.y+=(ty0-cam.y)*k;
+ updateParts(dt,cam.x,cam.y,vw,vh);
+ let cx=Math.round(cam.x),cy=Math.round(cam.y);if(shake>0&&!reduced.matches){shake-=dt;cx+=Math.round((rand()-.5)*3);cy+=Math.round((rand()-.5)*3);}
+ const X=wx=>Math.round((wx-cx)*S),Y=wy=>Math.round((wy-cy)*S),Wp=m.W*16,Hp=m.H*16;
+ ctx.imageSmoothingEnabled=false;ctx.fillStyle=m.bg;ctx.fillRect(0,0,cv.width,cv.height);
+ const gsx=Math.max(0,cx),gsy=Math.max(0,cy),gw=Math.min(Wp-gsx,vw),gh=Math.min(Hp-gsy,vh);
+ ctx.drawImage(m.ground[Math.floor(time*1.6)%m.ground.length],gsx,gsy,gw,gh,X(gsx),Y(gsy),gw*S,gh*S);
+ const T16=16*S;
+ if(m===world)bridges.forEach(b=>{if(b.st==='done'||b.st==='building'){for(let i=0;i<b.tiles.length;i++){const land=i*PLANK_DT+.15,st=land-.15;if(b.st==='building'&&b.t<st)continue;const drop=b.st==='building'&&b.t<land?Math.round((1-(b.t-st)/.15)*-14):0;const [tx,ty]=b.tiles[i];ctx.drawImage(BRIDGE[b.orient],X(tx*16),Y(ty*16+drop),T16,T16);}}});
+ drawParts('ground',X,Y,S);
+ const inView=o=>o.x<cx+vw+8&&o.x+o.spr.width>cx-8&&o.y<cy+vh+8&&o.y+o.spr.height>cy-8;
+ const list=m.objects.filter(o=>!o.hidden&&inView(o));
+ if(m===world)bridges.forEach(b=>{if(b.st==='locked'||b.st==='pending'){const [tx,ty]=b.tiles[0];list.push({spr:BARRICADE,x:tx*16-1,y:ty*16-3,sy:ty*16+16});}});
+ const chars=[];
+ m.npcs.forEach(n=>{const bob=n.moving?(n.t>.2&&n.t<.8?1:0):Math.floor(time*2+n.phase)%2,fr=n.moving&&n.t>.2&&n.t<.8?1:0;chars.push({spr:SPR[n.type][n.dir][fr],x:n.x-1,y:n.y-6-bob,sy:n.y+16,sh:[n.x+1,n.y+13]});});
+ const pf=charFrame(player.moving,player.t,player.steps);
+ chars.push({spr:SPR.player[player.dir][pf],x:player.x-1,y:player.y-6-(pf?1:0),sy:player.y+16.5,sh:[player.x+1,player.y+13]});
+ chars.forEach(c=>{ctx.drawImage(shadowSpr,X(c.sh[0]),Y(c.sh[1]),14*S,5*S);list.push(c);});
+ list.sort((a,b)=>a.sy-b.sy);
+ for(const o of list)ctx.drawImage(o.spr,X(o.x),Y(o.y),o.spr.width*S,o.spr.height*S);
+ drawParts('air',X,Y,S);
+ if(m===world)butterflies.forEach(b=>{const bx=b.hx+Math.sin(time*.7+b.ph)*22,by=b.hy+Math.sin(time*1.3+b.ph)*10-6;if(bx<cx-4||bx>cx+vw+4||by<cy-4||by>cy+vh+4)return;const f=Math.floor(time*8+b.ph)%2;ctx.fillStyle=b.col;ctx.fillRect(X(bx-1-f),Y(by),S*(1+f),S*2);ctx.fillRect(X(bx+1),Y(by),S*(1+f),S*2);ctx.fillStyle=INK;ctx.fillRect(X(bx),Y(by),S,S*2);});
+ ctx.textAlign='center';ctx.textBaseline='middle';const fs=Math.max(11*dpr,Math.round(5.5*S));ctx.font=`${fs}px ${LABEL_FONT}`;
+ if(m===world)buildings.forEach(B=>{const o=B.obj;if(!inView(o))return;const lx=X(o.x+o.spr.width/2),ly=Y(o.y)-fs*.9;const w=ctx.measureText(B.label).width+fs*.9,h=fs*1.45;
+  ctx.fillStyle='#1d2440';ctx.fillRect(lx-w/2-S,ly-h/2-S,w+2*S,h+2*S);ctx.fillStyle='#f4f1e6';ctx.fillRect(lx-w/2,ly-h/2,w,h);ctx.fillStyle='#1d2440';ctx.fillRect(lx-w/2+S,ly-h/2+S,w-2*S,h-2*S);ctx.fillStyle='#ffffff';ctx.fillText(B.label,lx,ly+1);});
+ if(m===world)world.npcs.forEach(n=>{const ri=residents.findIndex(r=>r.npc===n);if(ri<0||state.bonus[ri]||n.talking)return;const sx=X(n.x+3),sy=Y(n.y-20+Math.round(Math.sin(time*4+n.phase)));if(sx>-50&&sx<cv.width&&sy>-50&&sy<cv.height)ctx.drawImage(QMARK,sx,sy,QMARK.width*S,QMARK.height*S);});
+ if(!state.complete&&!cut){const [ttx,tty,kind]=targetPos(),bob=Math.round(Math.sin(time*5)*1.5);
+  if(kind==='exit'){ctx.drawImage(DOWNARROW,X(ttx*16+2),Y(tty*16-14+bob),DOWNARROW.width*S,DOWNARROW.height*S);}
+  else{const s=spots[state.step],ex=ttx*16+3,ey=(kind==='here'&&s.npc?tty*16-22:tty*16-18)+bob,sx=X(ex),sy=Y(ey);
+   if(sx>-20&&sx<cv.width&&sy>-20&&sy<cv.height)ctx.drawImage(EXCL,sx,sy,EXCL.width*S,EXCL.height*S);
+   else{const pcx=cv.width/2,pcy=cv.height/2,ang=Math.atan2(sy-pcy,sx-pcx),mg=40*dpr,rx=pcx-mg,ry=pcy-mg*1.6,kk=Math.min(Math.abs(rx/Math.cos(ang)),Math.abs(ry/Math.sin(ang))),ax=pcx+Math.cos(ang)*kk,ay=pcy+Math.sin(ang)*kk,sz=6*S*(1+.08*Math.sin(time*6));
+    ctx.save();ctx.translate(ax,ay);ctx.rotate(ang);ctx.fillStyle='#1d2440';ctx.beginPath();ctx.moveTo(sz*1.25,0);ctx.lineTo(-sz*.8,-sz*.95);ctx.lineTo(-sz*.8,sz*.95);ctx.closePath();ctx.fill();ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.moveTo(sz*.95,0);ctx.lineTo(-sz*.55,-sz*.65);ctx.lineTo(-sz*.55,sz*.65);ctx.closePath();ctx.fill();ctx.restore();}}}
+ if(m===world){ctx.font=`${Math.round(fs*.85)}px ${LABEL_FONT}`;bridges.forEach(b=>{if(b.st!=='locked')return;const [tx,ty]=b.tiles[0],lx=X(tx*16+8),ly=Y(ty*16-8);if(lx<-50||lx>cv.width+50||ly<-50||ly>cv.height+50)return;const t='잠김',w=ctx.measureText(t).width+fs*.6,h=fs*1.2;ctx.fillStyle='#1d2440';ctx.fillRect(lx-w/2,ly-h/2,w,h);ctx.fillStyle='#ffd23f';ctx.fillText(t,lx,ly+1);});}
+ ctx.drawImage(vign,0,0);
+ if(cut){const bar=Math.round(cv.height*.07);ctx.fillStyle='#0d0f1a';ctx.fillRect(0,0,cv.width,bar);ctx.fillRect(0,cv.height-bar,cv.width,bar);}}
+
+/* ================= 수료증 ================= */
+function fmtTime(s){s=Math.round(s);return `${Math.floor(s/60)}분 ${s%60}초`;}
+function certificate(){const score=totalScore(),title=scoreTitle(score),nb=Object.values(state.bonus).filter(Boolean).length;
+ if(!state.finishedAt){state.finishedAt=new Date().toLocaleDateString('ko-KR');}
+ const recs=names.slice(1,LAST).map((_,i)=>i+1).map(k=>state.records[k]?`<li><span>${names[k]}</span><span>${esc(state.records[k].choice)} · ${state.rewards[k]}개</span></li>`:'').join('');
+ return `<section class="cert" aria-label="수료증"><div class="ct">CERTIFICATE</div><h2>도토리 숲 수료증</h2><img src="${SPR.player.down[0].toDataURL()}" alt="다람이"><div class="nm">${esc(state.name)}</div><div class="ttl">${title}</div>
+ <div class="grid"><div>미션 도토리<b>${score}개</b></div><div>보너스 퀴즈<b>${nb}/7 (+${nb*5})</b></div><div>모은 용어<b>${state.terms.length}/${terms.length}</b></div><div>플레이 시간<b>${fmtTime(state.playSec)}</b></div><div>황금 도토리<b>${state.golden.length}/${goldens.length}</b></div><div>월 저축 충족률<b>${Math.round(endingInfo().rate)}%</b></div></div>
+ <p>칭호는 첫 응답 미션 점수 구간이며 소비 성향·재산 수준 평가가 아닙니다.</p><p>${MODEL_NOTE}</p><h3>첫 응답 기록</h3><ul>${recs}</ul><h3>재도전 성과 (점수 미반영)</h3><ul>${Object.entries(state.retry).map(([k,v])=>`<li>${esc(RETRY[k].q)}: ${v==='ok'?'정답':'해설 확인'}</li>`).join('')||'<li>재도전 기록 없음</li>'}</ul><div class="dt">${esc(state.finishedAt)} · 2027년 수업용 가정</div></section>${button('10년 뒤 엔딩 다시 보기','ending')}`;}
+
+/* ================= 시작 ================= */
+/* Input / modal coordinator / text learning route */
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+let textMode=false;
+function clearInput(reset=false){held.length=0;jdir=null;shiftRun=false;const id=joyId;endJoy();if(id!==null&&joy.hasPointerCapture(id))joy.releasePointerCapture(id);if(reset){runToggle=false;$('run').classList.remove('on');$('run').textContent='달리기';$('run').setAttribute('aria-pressed','false');}}
+const dialogAnnounce=document.createElement('div');dialogAnnounce.className='sr-only';dialogAnnounce.setAttribute('role','status');dialogEl.append(dialogAnnounce);dText.setAttribute('aria-hidden','true');
+function assumptionsHTML(){return `<details><summary>계산 가정·공식 출처 (기준 ${Assumptions.asOf})</summary><table><caption>2027년 기준 보험료를 적용한 교육용 추정</caption><tbody><tr><th>국민연금</th><td>근로자 ${Assumptions.pension*100}% · <a href="https://m.nps.or.kr/fileDown.do?atchFileId=FL26000090&amp;atchFileSn=1" target="_blank" rel="noopener">국민연금공단 연도별 표</a></td></tr><tr><th>건강보험</th><td>근로자 ${Assumptions.health*100}% (전체 7.19%) · <a href="https://mohw.go.kr/menu.es?mid=a10718000000" target="_blank" rel="noopener">보건복지부</a></td></tr><tr><th>장기요양</th><td>건강보험료 × ${(Assumptions.care*100).toFixed(2)}% · <a href="https://m.korea.kr/briefing/pressReleaseView.do?newsId=156787374" target="_blank" rel="noopener">보건복지부 2026-10-30 발표</a></td></tr><tr><th>고용보험</th><td>근로자 0.9% 유지 가정 · 2027년 별도 변경 고시 미확인</td></tr><tr><th>최저시급</th><td>${won(Assumptions.hourly)} · <a href="https://moel.go.kr/news/enews/report/enewsView.do?news_seq=19744" target="_blank" rel="noopener">고용노동부 고시 안내</a></td></tr><tr><th>소득세</th><td>교육용 보간 모델. 실제 간이세액표가 아닙니다. 근로자 부담 보험료와 세금 공제 후 교육용 추정 실수령액입니다.</td></tr><tr><th>학생 비교</th><td>보험 가입 조건·상하한을 생략한 비교 모델입니다.</td></tr><tr><th>저축</th><td>적금 월초 납입·연 ${Assumptions.savingRate*100}% 단리. 장기 저축 월말 납입·명목 연 3%÷12·월 이자 버림·만기 이자세 ${Assumptions.interestTax*100}%. 수업용 상품 가정입니다.</td></tr><tr><th>리볼빙·대출</th><td>연 ${Assumptions.debtRate}% 가상 조건. 실제 카드사 청구서 재현이 아닙니다.</td></tr><tr><th>주식 실험</th><td>가상 회사 5곳의 가상 1년 수익률(+36·+14·+6·−6·−30%). 실제 종목·시장 자료가 아니며 수수료·세금·배당은 제외합니다. 장기 전망과 예산에 반영하지 않습니다.</td></tr></tbody></table><p>${MODEL_NOTE}</p><p>게임 상태는 업로드하지 않습니다. 외부 글꼴은 jsDelivr에 요청하므로 접속 정보가 전달될 수 있습니다.</p></details>`;}
+const titleText=document.createElement('button');titleText.id='text-open';titleText.className='box px';titleText.textContent='텍스트 학습으로 시작 · 지도 이동 없이';$('title-go').after(titleText);
+const mission=document.createElement('button');mission.id='mission-open';mission.className='box px';mission.textContent='텍스트 학습 · 현재 미션';$('mapbox').querySelector('.btns').prepend(mission);
+function startText(){if(saveBlocked){$('save-message')?.focus();return;}textMode=true;titleOpen=false;$('title').hidden=true;clearInput();openPanel();}
+titleText.addEventListener('click',startText);mission.addEventListener('click',startText);
+const newStudent=document.createElement('button');newStudent.className='box px';newStudent.textContent='새 학생 시작 · 게임 데이터 삭제';newStudent.addEventListener('click',()=>{if(!confirm('이 브라우저의 4차·5차·6차 게임 저장과 소리 설정을 삭제하고 새 학생으로 시작할까요?'))return;deleteSaves();state=initial();pendingSave=null;saveBlocked=false;saveNotice='';$('save-message')?.remove();$('title-go').disabled=false;titleText.disabled=false;clearInput(true);resetWorld();titleOpen=false;$('title').hidden=true;openPanel();});titleText.after(newStudent);
+if(saveNotice){const message=document.createElement('div');message.id='save-message';message.tabIndex=-1;message.setAttribute('role','alert');message.textContent=saveNotice;titleText.after(message);$('title-go').disabled=true;titleText.disabled=true;if(pendingSave){const migrate=document.createElement('button');migrate.className='box px';migrate.textContent='원본 보존하고 6차로 가져오기';migrate.onclick=()=>{state=pendingSave;pendingSave=null;saveBlocked=false;persist();message.remove();migrate.remove();$('title-go').disabled=false;titleText.disabled=false;resetWorld();$('title-go').textContent='이어서 하기';};message.after(migrate);}}
+const modalNames={title:'다람이의 도토리 숲 시작',panel:'학습 미션과 재무계획서',dialog:'마을 대화',ending:'월 저축 충족률 엔딩',fail:'게임 실행 오류'};
+const modalElements=Object.keys(modalNames).map(id=>$(id));for(const el of modalElements){el.setAttribute('role','dialog');el.setAttribute('aria-label',modalNames[el.id]);el.tabIndex=-1;}
+let activeModal=null,returnFocus=null;
+const focusable=el=>[...el.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select,textarea,summary,[tabindex="0"]')].filter(e=>e.getClientRects().length&&!e.closest('[hidden]'));
+function syncModal(){const next=[$('fail'),$('title'),$('ending'),$('panel'),$('dialog')].find(e=>!e.hidden)||null;if(next===activeModal){if(next&&!next.contains(document.activeElement))(focusable(next)[0]||next).focus();return;}if(!activeModal)returnFocus=document.activeElement;activeModal=next;for(const el of [...document.body.children]){if(['SCRIPT','STYLE'].includes(el.tagName))continue;el.inert=!!next&&el!==next;}for(const el of modalElements)el.setAttribute('aria-modal',String(el===next));if(next){clearInput();(focusable(next)[0]||next).focus();}else{const target=returnFocus?.isConnected&&!returnFocus.closest('[hidden]')?returnFocus:mission;target.focus();returnFocus=null;}}
+const modalObserver=new MutationObserver(syncModal);for(const el of modalElements)modalObserver.observe(el,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true});
+// The map itself receives focus after leaving the title; Tab still reaches all controls.
+$('title-go').addEventListener('click',()=>queueMicrotask(()=>{if(!titleOpen){$('game').focus();returnFocus=$('game');}}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&activeModal===panelEl){e.preventDefault();e.stopImmediatePropagation();closePanel();return;}if(e.key!=='Tab'||!activeModal)return;const list=focusable(activeModal);if(!list.length){e.preventDefault();activeModal.focus();return;}const i=list.indexOf(document.activeElement);if(e.shiftKey&&(i<=0)){e.preventDefault();list.at(-1).focus();}else if(!e.shiftKey&&(i===list.length-1||i<0)){e.preventDefault();list[0].focus();}},true);
+function viewport(){const v=window.visualViewport;document.documentElement.style.setProperty('--view-height',(v?.height||innerHeight)+'px');document.documentElement.style.setProperty('--view-top',(v?.offsetTop||0)+'px');}window.visualViewport?.addEventListener('resize',viewport);window.visualViewport?.addEventListener('scroll',viewport);addEventListener('resize',viewport);viewport();
+queueMicrotask(syncModal);
+
+const coarse=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window);
+{const t=$('title-sprite'),x=t.getContext('2d');x.drawImage(SPR.player.down[0],0,0);let f=0;setInterval(()=>{if(!titleOpen||reduced.matches)return;f=(f+1)%4;x.clearRect(0,0,18,24);x.drawImage(SPR.player.down[[0,1,0,2][f]],0,0);},260);}
+$('title-help').innerHTML=(coarse?'<li><b>왼쪽 조이스틱</b>으로 걷고, <b>달리기</b> 버튼으로 빨리 이동</li><li>가까이 가서 <b>말 걸기</b> 버튼 누르기</li>':'<li><b>WASD·방향키</b>로 걷고, <b>Shift</b>를 누르면 달리기</li><li>가까이 가서 <b>E·스페이스</b>로 말 걸기</li>')+'<li>건물 문 앞에서 <b>들어가기</b>로 안에 들어가요</li><li><b>! 표시</b>와 노란 화살표가 다음 목적지예요</li><li><b>? 표시</b> 주민의 퀴즈와 숨은 <b>황금 도토리</b>로 보너스를 모아 🛒 상점에서 꾸며요</li><li>노란 <b>용어 표지판</b>을 읽으면 용어 도감이 채워져요</li>';
+$('title-go').textContent=state.step>0?`이어서 하기 · ${state.step}/${LAST} 단계`:'숲으로 들어가기';
+$('title-go').addEventListener('click',()=>{Snd.init();Snd.play('select');titleOpen=false;$('title').hidden=true;$('joy').hidden=!coarse;$('run').hidden=!coarse;$('hint').hidden=coarse;if(!coarse)setTimeout(()=>$('hint').hidden=true,9000);toast(state.step===0?'안내소에 들어가 촌장 거북에게 말을 걸어요':'지금 목표: '+objective());});
+syncBridges(false);refreshSigns();refreshGolden();refreshHUD();spawn();
+Object.assign(window.DaramiTest,{Snd,checkGolden,goldens:()=>goldens.map(g=>({tx:g.tx,ty:g.ty})),endingInfo,spots:()=>spots.map(s=>({step:s.step,map:s.map.id,tx:s.tx,ty:s.ty,door:s.building.door})),
+ go:(mapId,x,y,dir='up')=>{const m=mapId==='world'?world:Object.values(interiors).find(i=>i.id===mapId);Object.assign(player,{map:m,tx:x,ty:y,x:x*16,y:y*16,dir,moving:false});snapCam();},
+ where:()=>({map:player.map.id,tx:player.tx,ty:player.ty}),solidAt:(id,x,y)=>solidAt(id==='world'?world:Object.values(interiors).find(i=>i.id===id),x,y),interact:doInteract,
+ bridges:()=>bridges.map(b=>({st:b.st,tiles:b.tiles})),residents:()=>residents.map(r=>({tx:r.npc.tx,ty:r.npc.ty})),dlg:()=>dlg&&{line:dlg.lines[dlg.i],choice:!!dlg.choice},pick:pickChoice,cut:()=>!!cut,fading:()=>fading});
+requestAnimationFrame(frame);
+window.__daraDot=true;
+})();
+</script></body></html>

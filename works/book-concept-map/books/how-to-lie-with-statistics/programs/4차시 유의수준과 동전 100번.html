@@ -1,0 +1,526 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>유의수준과 동전 100번</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: two tabs — (1) 확률 예측기 (n번 중 앞면 k번), (2) one sheet — scene, distribution chart with 5% cut line, definition ledger, 5% vs 1% table, 2 questions; same token system as 「평균급여의 속임수」·「동전 던지기 실험실」 */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#E1E9F5;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1E2A3F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1E2A3F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+.top{margin-bottom:14px}
+.book{font-size:13px;color:var(--muted);letter-spacing:.02em;margin:0}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.4vw,34px);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:26px 24px;padding-inline:clamp(18px,4vw,38px);display:flex;flex-direction:column;gap:20px}
+.lead{margin:0;max-width:64ch;font-weight:500}
+.lead b{color:var(--red)}
+h2{font-size:15px;font-weight:700;margin:0 0 8px}
+.pen{font-family:var(--f-pen);color:var(--red);font-size:25px;line-height:1.15;margin:0;transform:rotate(-2deg);transform-origin:left center}
+
+.scene{background:var(--paper);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.scene p{margin:0}
+
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+figcaption{font-size:14px;font-weight:700}
+figcaption span{font-weight:400;color:var(--muted);font-size:13px}
+.svgbox{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
+.svgbox svg{display:block;width:100%;min-width:560px;height:auto}
+svg text{font-family:var(--f-body)}
+svg .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+svg .r-t{font-size:13px;font-weight:700;fill:var(--red)}
+svg .r-s{font-size:12px;fill:var(--ink)}
+svg .obs{font-size:12.5px;font-weight:700;fill:var(--red)}
+svg .mid{font-size:12px;fill:var(--muted)}
+.b-norm{fill:var(--slate)}
+.b-zone{fill:var(--red-soft);stroke:var(--red);stroke-width:1}
+.b-obs{fill:var(--red)}
+.cut{stroke:var(--red);stroke-width:1.5;stroke-dasharray:5 4}
+.ax{stroke:var(--muted);stroke-width:1}
+.tri{fill:var(--red)}
+
+.ledger{margin:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+.ledger div{display:grid;grid-template-columns:7em 1fr;gap:4px 14px;padding:10px 2px;border-top:1px solid var(--rule)}
+.ledger div:first-child{border-top:0}
+.ledger dt{font-weight:700}
+.ledger dt small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.ledger dd{margin:0;min-width:0}
+.ledger .verdict dt{color:var(--red)}
+@media (max-width:520px){.ledger div{grid-template-columns:1fr}}
+
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-size:13px;font-weight:700;border-bottom:2px solid var(--ink)}
+tbody th{font-weight:500;color:var(--muted);white-space:nowrap;font-size:13.5px}
+.foot{font-size:13px;color:var(--muted);margin:6px 0 0}
+
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.qs{border-top:2px solid var(--ink);min-width:0}
+.q{display:grid;grid-template-columns:2.2em 1fr;gap:4px 10px;padding:11px 0;border-top:1px solid var(--rule)}
+.q:first-of-type{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0;font-size:15px}
+.q details{grid-column:2;font-size:14.5px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.note{border:1px dashed var(--red);border-radius:4px;padding:14px 16px;min-width:0}
+.note .src{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--red);margin:0 0 6px}
+.note ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:8px;font-size:14px}
+
+/* tabs + tab 1 (확률 예측하기) */
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:14px}
+.topbar .top{margin:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--rule);background:var(--sheet);color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.tab:focus-visible,.btn:focus-visible,.chip:focus-visible,.navbtn:focus-visible,.seg button:focus-visible,.stp button:focus-visible,input:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.sheet[hidden]{display:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.title{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.6vw,28px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.setup{display:flex;flex-direction:column;gap:12px;border-top:2px solid var(--ink);padding-top:14px}
+.param{display:grid;grid-template-columns:6.5em 1fr auto;gap:8px 14px;align-items:center}
+@media (max-width:560px){.param{grid-template-columns:1fr auto}.param .lbl{grid-column:1/-1}}
+.param .lbl{font-weight:700}
+.param input[type=range]{width:100%;accent-color:var(--red);min-width:0}
+.stp{display:inline-flex;align-items:stretch;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.stp button{font:inherit;border:0;background:var(--sheet);color:var(--ink);width:36px;cursor:pointer;font-size:18px;line-height:1}
+.stp button:hover{background:var(--paper)}
+.stp input{width:4.2em;height:38px;border:0;border-left:1px solid var(--rule);border-right:1px solid var(--rule);text-align:center;font-family:var(--f-num);font-size:17px;font-weight:600;background:var(--sheet);color:var(--ink);-moz-appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:4px;overflow:hidden;justify-self:start}
+.seg button{font:inherit;border:0;background:var(--sheet);color:var(--ink);padding:7px 16px;cursor:pointer;font-weight:500;font-size:14.5px;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.presets .k{font-size:13px;color:var(--muted);margin-right:4px}
+.chip{font:inherit;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:13.5px}
+.chip:hover{border-color:var(--ink)}
+.question{font-family:var(--f-display);font-weight:800;font-size:clamp(18px,3vw,22px);line-height:1.5;margin:0;background:var(--paper);border-radius:4px;padding:14px 18px;text-wrap:balance}
+.question em{font-style:normal;color:var(--red)}
+.guess{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.guess label{font-weight:700}
+.pin{display:inline-flex;align-items:center;gap:6px}
+.pin input{width:6.5em;font-family:var(--f-num);font-size:17px;padding:7px 9px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:right}
+.btn{font:inherit;border:1px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:4px;padding:8px 14px;cursor:pointer;font-weight:500;font-size:14.5px}
+.btn:hover{background:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--sheet)}
+.btn.ghost{border-color:var(--rule);color:var(--muted)}
+.result{border-top:2px solid var(--ink);display:flex;flex-direction:column}
+.res-row{display:grid;grid-template-columns:9em 1fr;gap:4px 14px;padding:10px 2px;border-bottom:1px solid var(--rule);align-items:baseline}
+@media (max-width:520px){.res-row{grid-template-columns:1fr}}
+.res-row .k{font-weight:700;font-size:14.5px}
+.res-row .v{min-width:0;overflow-wrap:anywhere}
+.res-row .v .num{font-weight:600}
+.res-row.hl .v{font-family:var(--f-num);font-weight:600;font-size:clamp(18px,3vw,24px)}
+.res-row .qm{color:var(--muted);font-family:var(--f-num)}
+.res-row .cmp b{color:var(--red)}
+.hint{color:var(--muted)}
+.subhead{font-size:13.5px;font-weight:700;margin:14px 0 6px}
+.outcomes{display:flex;flex-wrap:wrap;gap:6px}
+.oc{padding:4px 9px;border:1px solid var(--rule);border-radius:3px;font-size:14px;letter-spacing:.05em;color:var(--muted)}
+.oc.on{background:var(--red-soft);border-color:var(--red);color:var(--ink);font-weight:700}
+.res-fig{margin-top:14px}
+.b-on{fill:var(--red)}
+.b-off{fill:var(--slate)}
+.expo{margin:0;font-size:14.5px}
+.expo b{color:var(--red)}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.confuse{border:2px solid var(--red);border-radius:4px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.confuse-h{margin:0;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red)}
+.cf-row{display:grid;grid-template-columns:1.6em 1fr auto;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--rule)}
+.cf-row:first-of-type{border-top:0}
+.cf-row p{margin:0;font-size:16.5px}
+.cf-row b{color:var(--red)}
+.cf-n{font-weight:700;color:var(--red)}
+.cf-v{font-family:var(--f-num);font-weight:600;font-size:22px}
+.cf-pen{margin:2px 0 0;font-family:var(--f-pen);color:var(--red);font-size:25px;line-height:1.15;transform:rotate(-1.5deg);transform-origin:left center}
+.cf-hint{margin:0;font-size:13.5px;color:var(--muted)}
+.res-row.warn .k{color:var(--red)}
+.res-row.warn .v b{color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.navbtn{font:inherit;border:1px solid var(--rule);background:none;color:var(--ink);padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500}
+.navbtn:hover{border-color:var(--ink)}
+.spacer{flex:1}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <header class="top">
+      <p class="book">『새빨간 거짓말, 통계』 70~71쪽 · 속지 않는 방법</p>
+      <h1>유의수준과 동전 100번</h1>
+    </header>
+    <nav class="tabs" aria-label="탭 이동">
+      <button class="tab" id="tab1" data-go="1" aria-selected="true">1 · 확률 예측하기</button>
+      <button class="tab" id="tab2" data-go="2" aria-selected="false">2 · 유의수준</button>
+    </nav>
+  </div>
+
+  <!-- TAB 1 -->
+  <section class="sheet" id="t1" aria-labelledby="h-t1">
+    <div>
+      <p class="eyebrow">1 / 2 · 확률 예측하기</p>
+      <h2 class="title" id="h-t1">앞면이 몇 번 나올 확률일까?</h2>
+    </div>
+    <p class="lead">던지는 횟수와 앞면 횟수를 마음대로 정하고, 확률을 <b>먼저 예상</b>한 다음 확인해 보자. 확률 = (조건에 맞는 경우의 수) ÷ (전체 경우의 수)</p>
+
+    <div class="confuse">
+      <p class="confuse-h">헷갈리기 쉬운 두 문장</p>
+      <div class="cf-row"><span class="cf-n">①</span><p>동전을 <b>1번</b> 던져 앞면이 나올 확률</p><span class="cf-v">1/2</span></div>
+      <div class="cf-row"><span class="cf-n">②</span><p>동전을 <b>10번</b> 던져 앞면이 <b>정확히 5번</b> 나올 확률</p><span class="cf-v">?</span></div>
+      <p class="cf-pen">①이 1/2이라고 ②도 1/2인 건 아니다!</p>
+      <p class="cf-hint">아래 ‘10번 중 5번’을 눌러 ②를 먼저 예상하고 확인해 보자.</p>
+    </div>
+
+    <div class="setup">
+      <div class="param">
+        <label class="lbl" for="nR">던지는 횟수</label>
+        <input type="range" id="nR" min="1" max="100" value="2">
+        <span class="stp"><button id="nMinus" aria-label="던지는 횟수 1 줄이기">−</button><input id="nN" type="number" inputmode="numeric" min="1" max="100" value="2" aria-label="던지는 횟수"><button id="nPlus" aria-label="던지는 횟수 1 늘리기">+</button></span>
+      </div>
+      <div class="param">
+        <label class="lbl" for="kR">앞면 횟수</label>
+        <input type="range" id="kR" min="0" max="2" value="1">
+        <span class="stp"><button id="kMinus" aria-label="앞면 횟수 1 줄이기">−</button><input id="kN" type="number" inputmode="numeric" min="0" max="2" value="1" aria-label="앞면 횟수"><button id="kPlus" aria-label="앞면 횟수 1 늘리기">+</button></span>
+      </div>
+      <div class="param">
+        <span class="lbl">조건</span>
+        <div class="seg" role="group" aria-label="조건">
+          <button id="mEq" data-mode="eq" aria-pressed="true">정확히</button>
+          <button id="mLe" data-mode="le" aria-pressed="false">이하</button>
+          <button id="mGe" data-mode="ge" aria-pressed="false">이상</button>
+        </div>
+      </div>
+      <div class="presets">
+        <span class="k">빠른 선택</span>
+        <button class="chip" id="ps1" data-n="1" data-k="1" data-m="eq">1번 중 1번</button>
+        <button class="chip" id="ps2" data-n="2" data-k="1" data-m="eq">2번 중 1번</button>
+        <button class="chip" id="ps3" data-n="3" data-k="2" data-m="eq">3번 중 2번</button>
+        <button class="chip" id="ps4" data-n="10" data-k="5" data-m="eq">10번 중 5번</button>
+        <button class="chip" id="ps5" data-n="100" data-k="50" data-m="eq">100번 중 50번</button>
+        <button class="chip" id="ps6" data-n="100" data-k="35" data-m="le">100번 중 35번 이하</button>
+      </div>
+    </div>
+
+    <p class="question" id="question" aria-live="polite"></p>
+
+    <div class="guess">
+      <label for="guess">내 예상</label>
+      <span class="pin"><input id="guess" type="number" min="0" max="100" step="any" placeholder="?"> %</span>
+      <button class="btn primary" id="check">확인하기</button>
+      <button class="btn ghost" id="hideBtn" hidden>다시 가리기</button>
+    </div>
+
+    <div class="result">
+      <div class="res-row"><span class="k">전체 경우의 수</span><span class="v" id="rTotal"></span></div>
+      <div class="res-row"><span class="k">조건에 맞는 경우</span><span class="v" id="rCount"><span class="qm">?</span></span></div>
+      <div class="res-row hl"><span class="k">확률</span><span class="v" id="rP"><span class="qm">?</span></span></div>
+      <div class="res-row"><span class="k">예상과 비교</span><span class="v cmp" id="rCmp"><span class="hint">예상을 적고 ‘확인하기’를 눌러 보자.</span></span></div>
+      <div class="res-row warn" id="halfRow" hidden><span class="k">짚어 볼 점</span><span class="v" id="halfNote"></span></div>
+
+      <div id="outBox" hidden>
+        <p class="subhead">나올 수 있는 모든 경우 <span class="hint" style="font-weight:400">· 빨간 칸 = 조건에 맞는 경우</span></p>
+        <div class="outcomes" id="outcomes"></div>
+      </div>
+
+      <figure class="res-fig" id="chartBox" hidden>
+        <figcaption>앞면 횟수별 확률 <span>막대 높이 = 그 횟수가 나올 확률 · 빨간 막대 = 조건에 맞는 경우</span></figcaption>
+        <div class="svgbox" id="chart"></div>
+      </figure>
+
+      <div class="controls" id="expRow" hidden>
+        <button class="btn" id="expBtn">실험으로 확인</button>
+        <p class="expo" id="expOut"></p>
+      </div>
+    </div>
+
+    <div class="nav"><span class="spacer"></span><button class="navbtn" data-go="2">2 · 유의수준 →</button></div>
+  </section>
+
+  <!-- TAB 2 -->
+  <section class="sheet" id="t2" aria-label="유의수준" hidden>
+    <p class="eyebrow">2 / 2 · 유의수준</p>
+    <p class="lead">통계는 일부(표본)만 보고 전체를 판단하니까 <b>항상 틀릴 수 있다.</b> 유의수준은 그 ‘틀릴 위험’을 몇 %까지 받아들일지 정해 둔 숫자다.</p>
+
+    <div class="scene">
+      <p>정상인 동전을 100번 던졌는데 <b>앞면이 35번</b>밖에 안 나왔다. 정상 동전에서 앞면이 35번 이하로 나올 확률은 약 <span class="num">0.002</span>(0.2%)다.</p>
+      <p class="pen">“이 동전, 불량 아니야?”</p>
+    </div>
+
+    <figure>
+      <figcaption>정상 동전을 100번 던질 때, 앞면 횟수별 확률 <span>막대 높이 = 그 횟수가 나올 확률</span></figcaption>
+      <div class="svgbox">
+        <svg viewBox="0 0 700 262" role="img" aria-label="앞면 횟수 25번부터 75번까지의 확률 막대그래프. 50번 근처가 가장 높다. 41번 이하는 유의수준 5% 판정 구역이며, 정상 동전도 약 4.4% 확률로 여기에 들어간다. 실제 결과 35번 이하가 나올 확률은 약 0.2%이다.">
+          <g id="bars"></g>
+          <line class="cut" x1="260" y1="56" x2="260" y2="200"/>
+          <text class="r-t" x="56" y="72">판정 구역 (유의수준 5%)</text>
+          <text class="r-s" x="56" y="92">41번 이하가 나오면</text>
+          <text class="r-s" x="56" y="110">‘불량 동전’이라고 판정</text>
+          <text class="r-s" x="56" y="128">정상 동전도 약 4.4%는 여기에</text>
+          <text class="mid" x="365" y="32" text-anchor="middle">50번 근처가 가장 흔하다</text>
+          <line class="ax" x1="46" y1="200" x2="684" y2="200"/>
+          <g id="ticks"></g>
+          <polygon class="tri" points="179.7,203 172.7,215 186.7,215"/>
+          <text class="obs" x="166" y="252">▲ 실제 결과 35번 · 35번 이하가 나올 확률 약 0.2%</text>
+        </svg>
+      </div>
+    </figure>
+
+    <dl class="ledger">
+      <div><dt>유의수준<small>미리 정하는 기준</small></dt><dd>정상인데 ‘불량’이라고 <b>잘못 판단할 위험</b>을 최대 몇 %까지 받아들일지 정한 값. 보통 5%, 더 엄격하게는 1%.</dd></div>
+      <div><dt>유의확률<small>결과로 계산하는 값</small></dt><dd>정상 동전이라고 가정했을 때, 이번 결과나 그보다 더 극단적인 결과가 나올 확률. 이 예에서는 약 0.2%.</dd></div>
+      <div class="verdict"><dt>판정</dt><dd><b>결과만 보는 사람:</b> <span class="num">0.2% &lt; 5%</span> → 우연이라고 보기 어렵다 → ‘불량 동전’이라고 판단한다.<br><b>책 속 진실:</b> 사실 이 동전은 정상이다. 그러니 이 판단은 틀렸다. 책은 바로 이런 착각이 생길 수 있다는 걸 보여 주려는 것이다.</dd></div>
+    </dl>
+
+    <div>
+      <h2>유의수준 5% vs 1%</h2>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th></th><th>유의수준 5%</th><th>유의수준 1%</th></tr></thead>
+          <tbody>
+            <tr><th>잘못 판단할 위험</th><td>최대 5% · 20번 판단에 1번꼴</td><td>최대 1% · 100번 판단에 1번꼴</td></tr>
+            <tr><th>동전 100번 판정선</th><td>앞면 <span class="num">41</span>번 이하 → 불량</td><td>앞면 <span class="num">37</span>번 이하 → 불량</td></tr>
+            <tr><th>책의 설명</th><td>대부분 이 정도면 충분하다</td><td>‘거의 확실하다’고 표현한다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="foot">여기서는 앞면이 ‘너무 적게’ 나오는 쪽만 따졌다. 동전 실험실 STEP 3의 “10번 중 8번 이상 또는 2번 이하면 이상하다”는 기준은 정상 동전도 약 10.9%가 걸리는 느슨한 판정이다.</p>
+    </div>
+
+    <div class="two">
+      <div class="qs">
+        <h2 style="padding-top:10px">생각해 보기</h2>
+        <div class="q">
+          <span class="qn">Q1</span>
+          <p>공장에서 동전 20개를 검사한다. 사실 20개 모두 <b>정상</b>이다.<br>검사 방법: 동전 하나를 100번 던져서 앞면이 41번 이하면 ‘불량’ 도장을 찍는다.<br>정상 동전도 이 검사에 걸릴 확률은 약 5%다. 그렇다면 억울하게 ‘불량’ 도장을 받는 동전은 몇 개쯤 나올까?</p>
+          <details id="qa1"><summary>답 보기</summary>
+            <div class="ans">20개 × 5% = <b>1개쯤</b>. 모두 정상인데도 1개 정도는 억울하게 ‘불량’ 판정을 받는다. 유의수준 5%란 ‘20번 판정하면 1번쯤은 이렇게 착각해도 받아들이겠다’는 뜻이다.</div>
+          </details>
+        </div>
+        <div class="q">
+          <span class="qn">Q2</span>
+          <p>유의수준을 5%에서 1%로 낮추면 무엇이 좋아지고, 무엇이 나빠질까?</p>
+          <details id="qa2"><summary>답 보기</summary>
+            <div class="ans">좋아지는 점: 정상 동전을 불량으로 착각하는 일이 줄어든다. 나빠지는 점: 판정선이 41번에서 37번으로 엄격해져서, 정말로 앞면이 덜 나오는 불량 동전도 ‘정상’으로 놓치기 쉬워진다. 두 실수는 한쪽을 줄이면 다른 쪽이 늘어나는 관계다.</div>
+          </details>
+        </div>
+      </div>
+
+      <aside class="note">
+        <p class="src">책 꼼꼼히 읽기 · 70~71쪽</p>
+        <ul>
+          <li>책에는 동전을 ‘1010번’ 던졌다고 인쇄되어 있다. 그런데 확률 0.002와 맞는 횟수는 <b>100번</b>이다 (100번 중 35번 이하 ≈ 0.0018). 100번의 오타로 보인다.</li>
+          <li>책은 0.002를 ‘유의수준’이라고 불렀다. ‘35번 이하면 불량’이라는 기준을 <b>미리 정했다면</b> 맞는 말이다. 정상 동전이 그 기준에 걸릴 확률이기 때문이다. 하지만 35번이 실험 <b>결과</b>로 나온 값이라면, 0.002는 <b>유의확률</b>이라고 부르는 게 정확하다.</li>
+        </ul>
+      </aside>
+    </div>
+
+    <div class="nav"><button class="navbtn" data-go="1">← 1 · 확률 예측하기</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // exact binomial(100, 1/2) probabilities for k = 25..75
+  function comb(n,k){var r=1;for(var i=1;i<=k;i++){r=r*(n-k+i)/i}return r}
+  var N=100, L=50, W=12.35, BOT=200, H=160, PMAX=0.08;
+  var bars='', ticks='';
+  for(var k=25;k<=75;k++){
+    var p=comb(N,k)/Math.pow(2,N);
+    var h=Math.max(p/PMAX*H,0.8);
+    var x=L+(k-25)*W+1.2;
+    var cls=k<=35?'b-obs':(k<=41?'b-zone':'b-norm');
+    bars+='<rect class="'+cls+'" x="'+x.toFixed(1)+'" y="'+(BOT-h).toFixed(1)+'" width="'+(W-2.4).toFixed(1)+'" height="'+h.toFixed(1)+'"/>';
+    if(k%5===0){ticks+='<text class="tick" x="'+(L+(k-25)*W+W/2).toFixed(1)+'" y="230" text-anchor="middle">'+k+'</text>'}
+  }
+  ticks+='<text class="tick" x="684" y="248" text-anchor="end">(앞면 횟수)</text>';
+  document.getElementById('bars').innerHTML=bars;
+  document.getElementById('ticks').innerHTML=ticks;
+})();
+
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function sup(x){return '<sup>'+x+'</sup>'}
+  function sub(x){return '<sub>'+x+'</sub>'}
+  function commas(x){return Number(x).toLocaleString('ko-KR')}
+
+  /* tabs */
+  function render(){
+    var i=location.hash==='#t2'?2:1;
+    $('t1').hidden=i!==1; $('t2').hidden=i!==2;
+    $('tab1').setAttribute('aria-selected',i===1?'true':'false');
+    $('tab2').setAttribute('aria-selected',i===2?'true':'false');
+  }
+  function go(i){ if(location.hash!=='#t'+i){location.hash='t'+i}else{render()} window.scrollTo(0,0); }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(+b.getAttribute('data-go'))})});
+  window.addEventListener('hashchange',render);
+
+  /* state */
+  var n=2,k=1,mode='eq',shown=false,row=null,total=null;
+  function buildRow(){ row=[BigInt(1)]; for(var i=0;i<n;i++){ row.push(row[i]*BigInt(n-i)/BigInt(i+1)); } total=BigInt(1)<<BigInt(n); }
+  function match(i){ return mode==='eq'?i===k:(mode==='le'?i<=k:i>=k); }
+  function condText(){ return mode==='eq'?('정확히 '+k+'번'):(mode==='le'?(k+'번 이하'):(k+'번 이상')); }
+  function big(b){ var s=b.toString(); if(s.length<=13) return commas(s); var e=s.length-1, m=Math.round(Number(s.slice(0,4))/10)/100; if(m>=10){m=m/10;e+=1} return m.toFixed(2)+' × 10'+sup(e); }
+  function fmtP(p){
+    if(p===0) return '0'; if(p===1) return '1';
+    if(p>=0.001) return String(+p.toPrecision(3));
+    var e=Math.floor(Math.log10(p)), m=p/Math.pow(10,e);
+    if(m>=9.995){m=m/10;e+=1}
+    return m.toFixed(2)+' × 10'+sup(e);
+  }
+  function fmtPct(p){
+    var x=p*100;
+    if(x===0) return '0%'; if(x===100) return '100%';
+    if(x>=10) return (+x.toFixed(1))+'%';
+    if(x>=0.01) return (+x.toFixed(2))+'%';
+    return '0.01% 미만';
+  }
+  function countSum(){ var c=BigInt(0); for(var i=0;i<=n;i++){ if(match(i)) c+=row[i]; } return c; }
+  function countExpr(){
+    var C=function(j){return sub(n)+'C'+sub(j)};
+    if(mode==='eq') return C(k);
+    var lo=mode==='le'?0:k, hi=mode==='le'?k:n;
+    if(lo===hi) return C(lo);
+    if(hi-lo===1) return C(lo)+' + '+C(hi);
+    return C(lo)+' + … + '+C(hi);
+  }
+
+  /* controls */
+  function syncInputs(){
+    $('nR').value=n; $('nN').value=n;
+    $('kR').max=n; $('kN').max=n; $('kR').value=k; $('kN').value=k;
+    document.querySelectorAll('[data-mode]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-mode')===mode?'true':'false')});
+  }
+  function setN(v){ v=Math.round(+v); if(isNaN(v)) return; n=Math.max(1,Math.min(100,v)); if(k>n) k=n; changed(); }
+  function setK(v){ v=Math.round(+v); if(isNaN(v)) return; k=Math.max(0,Math.min(n,v)); changed(); }
+  function changed(){ buildRow(); syncInputs(); shown=false; draw(); }
+
+  $('nR').addEventListener('input',function(){setN(this.value)});
+  $('kR').addEventListener('input',function(){setK(this.value)});
+  $('nN').addEventListener('change',function(){setN(this.value)});
+  $('kN').addEventListener('change',function(){setK(this.value)});
+  $('nMinus').addEventListener('click',function(){setN(n-1)});
+  $('nPlus').addEventListener('click',function(){setN(n+1)});
+  $('kMinus').addEventListener('click',function(){setK(k-1)});
+  $('kPlus').addEventListener('click',function(){setK(k+1)});
+  document.querySelectorAll('[data-mode]').forEach(function(b){b.addEventListener('click',function(){mode=b.getAttribute('data-mode');changed()})});
+  document.querySelectorAll('.presets .chip').forEach(function(b){b.addEventListener('click',function(){
+    n=+b.getAttribute('data-n'); k=+b.getAttribute('data-k'); mode=b.getAttribute('data-m'); $('guess').value=''; changed();
+  })});
+  $('check').addEventListener('click',function(){shown=true;draw()});
+  $('hideBtn').addEventListener('click',function(){shown=false;draw()});
+  $('guess').addEventListener('keydown',function(e){if(e.key==='Enter'){shown=true;draw()}});
+
+  /* draw */
+  function draw(){
+    $('question').innerHTML='동전을 <em>'+n+'번</em> 던져서 앞면이 <em>'+condText()+'</em> 나올 확률은?';
+    $('rTotal').innerHTML='2'+sup(n)+' = <span class="num">'+big(total)+'</span>가지';
+    $('check').hidden=shown; $('hideBtn').hidden=!shown;
+    $('outBox').hidden=!(shown&&n<=4); $('chartBox').hidden=!shown; $('expRow').hidden=!shown;
+    if(!shown){
+      $('rCount').innerHTML='<span class="qm">?</span>';
+      $('rP').innerHTML='<span class="qm">?</span>';
+      $('rCmp').innerHTML='<span class="hint">예상을 적고 ‘확인하기’를 눌러 보자.</span>';
+      $('expOut').innerHTML='';
+      $('halfRow').hidden=true;
+      return;
+    }
+    var c=countSum(), p=Number(c)/Number(total);
+    $('rCount').innerHTML=countExpr()+' = <span class="num">'+big(c)+'</span>가지';
+    if(n<=20){
+      $('rP').innerHTML=commas(c.toString())+' ÷ '+commas(total.toString())+' = '+fmtP(p)+' ('+fmtPct(p)+')';
+    } else {
+      $('rP').innerHTML='≈ '+fmtP(p)+' ('+fmtPct(p)+')';
+    }
+    var g=$('guess').value.trim();
+    if(g===''){ $('rCmp').innerHTML='예상을 적지 않았다. 다음엔 먼저 적어 보자.'; }
+    else {
+      var gv=+g, act=p*100, d=gv-act, msg;
+      if(Math.abs(d)<1) msg=' → 거의 맞혔다!';
+      else msg=d>0?' → 실제보다 <b>크게</b> 예상했다':' → 실제보다 <b>작게</b> 예상했다';
+      $('rCmp').innerHTML='내 예상 <span class="num">'+gv+'%</span> · 실제 <span class="num">'+fmtPct(p)+'</span>'+msg;
+    }
+    var isHalf=(mode==='eq'&&n%2===0&&k===n/2);
+    $('halfRow').hidden=!isHalf;
+    if(isHalf){
+      $('halfNote').innerHTML=(n===2)?
+        '2번일 때는 우연히 1/2과 같다. 하지만 4번, 10번, 100번으로 늘리면 달라진다. 직접 바꿔 보자.':
+        '‘앞면이 나올 확률 <b>1/2</b>’과 ‘<b>'+n+'번 중 정확히 '+k+'번</b>이 나올 확률’은 다르다. 정확히 절반이 나올 확률은 <b>'+fmtPct(p)+'</b>뿐이다. '+k+'번이 가장 흔한 결과이긴 하지만, 나머지 확률을 다른 횟수들이 나눠 갖는다.';
+    }
+    if(n<=4){
+      var html='';
+      for(var m=0;m<(1<<n);m++){
+        var str='',h=0;
+        for(var t=n-1;t>=0;t--){ var head=((m>>t)&1)===0; str+=head?'앞':'뒤'; if(head) h++; }
+        html+='<span class="oc'+(match(h)?' on':'')+'">'+str+'</span>';
+      }
+      $('outcomes').innerHTML=html;
+    }
+    drawChart();
+    $('expBtn').textContent='실험으로 확인: '+n+'번 던지기를 1,000회 반복';
+    $('expOut').innerHTML='';
+  }
+  function drawChart(){
+    var W=700,H=210,L=34,R=680,BASE=170,TOP=22, slot=(R-L)/(n+1), bw=Math.min(slot*0.8,56);
+    var T=Number(total), pmax=0, ps=[];
+    for(var i=0;i<=n;i++){ var q=Number(row[i])/T; ps.push(q); if(q>pmax) pmax=q; }
+    var step=n<=20?1:(n<=50?5:10);
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+n+'번 던질 때 앞면 횟수별 확률 막대그래프">';
+    for(var j=0;j<=n;j++){
+      var h=ps[j]/pmax*(BASE-TOP); if(ps[j]>0&&h<0.8) h=0.8;
+      var cx=L+slot*(j+0.5);
+      s+='<rect class="'+(match(j)?'b-on':'b-off')+'" x="'+(cx-bw/2).toFixed(1)+'" y="'+(BASE-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'"/>';
+      if(j%step===0||j===n) s+='<text class="tick" x="'+cx.toFixed(1)+'" y="'+(BASE+18)+'" text-anchor="middle">'+j+'</text>';
+    }
+    s+='<line class="ax" x1="'+(L-4)+'" y1="'+BASE+'" x2="'+(R+4)+'" y2="'+BASE+'"/>';
+    s+='<text class="tick" x="'+R+'" y="'+(BASE+36)+'" text-anchor="end">(앞면 횟수)</text>';
+    s+='</svg>';
+    $('chart').innerHTML=s;
+  }
+  $('expBtn').addEventListener('click',function(){
+    var reps=1000, hits=0;
+    for(var r=0;r<reps;r++){ var h=0; for(var t=0;t<n;t++){ if(Math.random()<0.5) h++; } if(match(h)) hits++; }
+    var p=Number(countSum())/Number(total);
+    $('expOut').innerHTML='1,000회 중 조건에 맞은 횟수 <b class="num">'+hits+'회</b> → '+(hits/10)+'% · 이론 확률 '+fmtPct(p);
+  });
+
+  buildRow(); syncInputs(); draw(); render();
+})();
+</script>
+
+</body></html>

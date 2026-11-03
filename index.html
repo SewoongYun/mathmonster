@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MATH LAB · 수학 실험실</title>
+<meta name="description" content="고등학교 수학 교사가 직접 만든 수업 게임·인터랙티브 교재·앱을 열어 보는 수학 실험실">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="style.css">
+<script>try { var t = localStorage.getItem("lab-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230b0d0c'/><text x='32' y='44' font-size='34' text-anchor='middle' fill='%23c8f54a' font-family='monospace' font-weight='700'>∑</text></svg>">
+</head>
+<body>
+
+<header class="top" id="top">
+  <a class="brand" href="#">
+    <span class="brand-mark">∑</span>
+    <span class="brand-text"><b id="brandName">MATH LAB</b><i id="brandSub"></i></span>
+  </a>
+  <div class="status"><span class="dot"></span><span id="statusText">LAB OPEN</span></div>
+  <nav class="top-nav">
+    <a href="#works">실험 목록</a>
+    <a href="#about">연구 노트</a>
+    <a id="navBlog" href="#" target="_blank" rel="noopener" hidden>블로그 ↗</a>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="밝게/어둡게 바꾸기">☾</button>
+    <a class="edit-link mono" href="edit.html" title="편집 (비밀번호 필요)">EDIT</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <canvas id="plot" aria-hidden="true"></canvas>
+    <div class="readout mono" id="readout" aria-hidden="true">x = 0.000<br>y = 0.000</div>
+    <div class="hero-inner">
+      <p class="mono kicker" id="heroKicker"></p>
+      <h1 class="hero-title">
+        <span class="line"><span>MATH</span></span>
+        <span class="line"><span>LAB<sup>®</sup></span></span>
+      </h1>
+      <p class="hero-ko" id="heroKo"></p>
+      <p class="hero-intro" id="heroIntro"></p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#works">실험 기록 보기 ↓</a>
+        <a class="btn ghost" id="heroBlog" href="#" target="_blank" rel="noopener" hidden>수업 활용 블로그 ↗</a>
+      </div>
+    </div>
+    <dl class="stats mono" id="stats"></dl>
+  </section>
+
+  <div class="ticker mono" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+
+  <section class="works" id="works">
+    <div class="works-head">
+      <div>
+        <p class="mono kicker">// 01 — EXPERIMENTS</p>
+        <h2 class="section-title">실험 기록 <span class="mono" id="count"></span></h2>
+      </div>
+      <div class="controls">
+        <div class="chips" id="chips" role="tablist" aria-label="종류로 거르기"></div>
+        <div class="tools">
+          <label class="search">
+            <span class="sr-only">검색</span>
+            <input id="q" type="search" placeholder="search: 단원, 태그…" autocomplete="off">
+          </label>
+          <div class="view-toggle mono" role="group" aria-label="보기 방식">
+            <button data-view="grid" aria-pressed="true">GRID</button>
+            <button data-view="index" aria-pressed="false">INDEX</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <ol class="index" id="index" hidden></ol>
+    <p class="empty mono" id="empty" hidden>NO RESULT — 찾는 실험이 없어요.</p>
+  </section>
+
+  <section class="about" id="about">
+    <p class="mono kicker">// 02 — LAB NOTES</p>
+    <h2 class="section-title">연구 노트</h2>
+    <div class="notes">
+      <article class="note">
+        <span class="mono note-no">01</span>
+        <h3>설치 없이, 바로 실행</h3>
+        <p>모든 실험은 브라우저에서 바로 열립니다. 휴대폰·태블릿·PC 어디서나 회원가입 없이 수업에 쓸 수 있어요.</p>
+      </article>
+      <article class="note">
+        <span class="mono note-no">02</span>
+        <h3>차수를 쌓아 다듬기</h3>
+        <p>수업에서 써 보고, 학생 반응을 보고, 다시 고칩니다. 작품마다 몇 번째 버전인지 함께 기록해 두었어요.</p>
+      </article>
+      <article class="note">
+        <span class="mono note-no">03</span>
+        <h3>활용법은 블로그에</h3>
+        <p>실제 수업 운영 방법, 학생 반응, 학습지는 <span id="aboutBlog">블로그</span>에 정리합니다. 수업에 쓰셨다면 이야기 들려주세요.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="foot mono">
+  <span id="footName"></span>
+  <span class="foot-links" id="footLinks"></span>
+  <a href="#top">TOP ↑</a>
+</footer>
+
+<div class="peek" id="peek" aria-hidden="true"></div>
+
+<!-- 자세히 보기 -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <article class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+    <div class="sheet-head mono">
+      <span id="sCode"></span>
+      <button class="icon-btn" data-close aria-label="닫기">✕</button>
+    </div>
+    <div class="sheet-cover" id="sCover"></div>
+    <div class="sheet-body">
+      <p class="mono kicker" id="sKind"></p>
+      <h3 id="sTitle"></h3>
+      <dl class="spec mono" id="sSpec"></dl>
+      <div class="actions" id="sActions"></div>
+      <div class="sheet-desc" id="sDesc"></div>
+      <div id="sUses"></div>
+      <div id="sFiles"></div>
+      <ul class="tags mono" id="sTags"></ul>
+    </div>
+  </article>
+</div>
+
+<!-- 바로 보기 -->
+<div class="viewer" id="viewer" hidden>
+  <div class="viewer-bar">
+    <button class="icon-btn" id="vBack" aria-label="뒤로">←</button>
+    <span class="mono run"><span class="dot"></span>RUNNING</span>
+    <strong id="vTitle"></strong>
+    <span class="viewer-tools">
+      <button class="pill mono" id="vFull">FULLSCREEN</button>
+      <a class="pill mono" id="vNew" target="_blank" rel="noopener">NEW TAB ↗</a>
+      <button class="icon-btn" id="vClose" aria-label="닫기">✕</button>
+    </span>
+  </div>
+  <div class="viewer-stage"><iframe id="vFrame" title="작품 보기" allow="fullscreen; autoplay; clipboard-write"></iframe></div>
+</div>
+
+<script>
+  // 작품 목록·연결 정보는 항상 새로 받기 (고친 직후에도 바로 보이게)
+  (function () {
+    var v = Date.now(), list = ["data/works.js?v=" + v, "data/sheet-config.js?v=" + v, "app.js?v=" + v];
+    (function next() {
+      if (!list.length) return;
+      var s = document.createElement("script");
+      s.src = list.shift(); s.onload = s.onerror = next;
+      document.body.appendChild(s);
+    })();
+  })();
+</script>
+
+</body>
+</html>

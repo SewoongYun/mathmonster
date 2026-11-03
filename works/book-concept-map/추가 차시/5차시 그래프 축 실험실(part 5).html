@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>그래프 축 실험실 — 같은 데이터, 다른 인상</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: 4-step lab notebook (예상 → 축 바꾸기 → 손계산 → 정리); same token system as 「동전 던지기 실험실」「예상오차와 표준오차」 */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#E1E9F5;
+  --green:#2F7A4B;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1E2A3F;
+    --green:#6CC48F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1E2A3F;
+  --green:#6CC48F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:20px 16px 40px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* header + stepper */
+.top{margin-bottom:12px}
+.book{font-size:13px;color:var(--muted);letter-spacing:.02em;margin:0}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.4vw,34px);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+.stepper{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.stepper button{width:100%;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-width:0}
+.stepper .sn{font-family:var(--f-num);font-weight:600;color:var(--muted)}
+.stepper .sl{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stepper button[aria-current="step"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.stepper button[aria-current="step"] .sn{color:var(--sheet)}
+@media (max-width:560px){.stepper .sl{font-size:12.5px}.stepper button{padding:7px 8px;gap:6px}}
+
+/* sheet */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:26px 22px;padding-inline:clamp(18px,4vw,38px);display:flex;flex-direction:column;gap:20px}
+.sheet[hidden]{display:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.sheet h2{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.6vw,28px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.lead{margin:0;max-width:64ch}
+.lead b{color:var(--red)}
+h3{font-size:15px;font-weight:700;margin:0 0 6px}
+.pen{font-family:var(--f-pen);color:var(--red);font-size:25px;line-height:1.2;margin:0;transform:rotate(-1.5deg);transform-origin:left center}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+
+/* step 1 */
+.scene{background:var(--paper);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.scene p{margin:0}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;min-width:0;background:var(--sheet)}
+.tile .k{font-size:12.5px;color:var(--muted);display:block}
+.tile .v{font-family:var(--f-num);font-weight:600;font-size:clamp(19px,3.2vw,25px);line-height:1.3;font-variant-numeric:tabular-nums}
+.tile.hl{border-color:var(--ink)}
+.tile.warn{border-color:var(--red)}
+.tile.warn .v{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:7px 16px;cursor:pointer;font-size:14.5px}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.predict{border-top:2px solid var(--ink)}
+.predict .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;padding:10px 2px;border-top:1px solid var(--rule)}
+.predict .row:first-of-type{border-top:0}
+.pin{display:flex;align-items:center;gap:6px}
+.pin input,.calc input{width:5.5em;font-family:var(--f-num);font-size:16px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:right}
+
+/* chart */
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+figcaption{font-size:14px;font-weight:700;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+figcaption .lg{font-weight:400;font-size:13px;color:var(--muted)}
+.chartbox{position:relative;border:1px solid var(--rule);border-radius:4px;padding:6px 4px 2px;background:var(--sheet)}
+.chartbox svg{display:block;width:100%;height:auto;touch-action:pan-y}
+svg text{font-family:var(--f-body)}
+svg .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+svg .unit{font-size:11px;fill:var(--muted)}
+svg .endl{font-family:var(--f-num);font-size:12px;font-weight:600;fill:var(--ink)}
+.grid{stroke:var(--rule);stroke-width:1}
+.ax{stroke:var(--muted);stroke-width:1}
+.area{fill:var(--blue-soft)}
+.ln{fill:none;stroke:var(--blue);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.dt{fill:var(--blue);stroke:var(--sheet);stroke-width:2}
+.hgt{stroke:var(--red);stroke-width:2}
+svg .hgtT{font-family:var(--f-num);font-size:11.5px;font-weight:600;fill:var(--red)}
+.brk{fill:none;stroke:var(--red);stroke-width:1.6}
+.tip{position:absolute;pointer-events:none;background:var(--sheet);border:1px solid var(--ink);border-radius:4px;padding:4px 9px;font-size:12.5px;opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip .num{font-weight:600}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl-label{font-size:14px;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--sheet);padding:8px 14px;cursor:pointer;font-weight:500;font-size:14px;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+@media (max-width:480px){.seg button{padding:8px 10px;font-size:13px}}
+.sliders{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+@media (max-width:560px){.sliders{grid-template-columns:1fr}}
+.sl label{display:flex;justify-content:space-between;font-size:13.5px;color:var(--muted)}
+.sl label b{font-family:var(--f-num);color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer}
+.toggle input{accent-color:var(--red);width:16px;height:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.stats{grid-template-columns:1fr 1fr}.stats .tile:first-child{grid-column:1/-1}}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:4px;padding:8px 14px;cursor:pointer;font-weight:500;font-size:14.5px}
+.btn:hover{background:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--sheet)}
+.btn.primary:hover{opacity:.9}
+.recall{margin:0;background:var(--paper);border-radius:4px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.recall b{color:var(--red)}
+
+/* step 3 */
+.formula{margin:0;border-left:3px solid var(--red);padding:6px 0 6px 16px;font-family:var(--f-display);font-weight:700;font-size:clamp(16px,2.6vw,19px);line-height:1.6}
+.formula small{display:block;font-family:var(--f-body);font-weight:400;font-size:13px;color:var(--muted)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--ink)}
+td.num{font-weight:500}
+td.ex{background:var(--paper)}
+.calc input{width:4.5em;font-size:15px;padding:4px 6px}
+.mark{display:inline-block;min-width:1.4em;font-weight:700;text-align:center}
+.mark.ok{color:var(--green)} .mark.no{color:var(--red)}
+
+/* step 4 */
+.law{border:2px solid var(--ink);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.law .t{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.law p{margin:0}
+.law .main{font-family:var(--f-display);font-weight:800;font-size:clamp(18px,2.8vw,21px);line-height:1.5}
+.law b{color:var(--red)}
+.qs{border-top:2px solid var(--ink)}
+.q{display:grid;grid-template-columns:2.4em 1fr;gap:4px 10px;padding:12px 0;border-top:1px solid var(--rule)}
+.q:first-child{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0}
+.q details{grid-column:2;font-size:14.5px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.mine{margin:0;font-size:14.5px;color:var(--muted)}
+.mine b{color:var(--ink)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.navbtn{border:1px solid var(--rule);background:none;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500}
+.navbtn:hover{border-color:var(--ink)}
+.spacer{flex:1}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="book">『새빨간 거짓말, 통계』 104~105쪽 · 그래프의 세로축</p>
+    <h1>그래프 축 실험실</h1>
+  </header>
+
+  <ol class="stepper" aria-label="실험 단계">
+    <li><button id="st1" data-go="1"><span class="sn">1</span><span class="sl">예상</span></button></li>
+    <li><button id="st2" data-go="2"><span class="sn">2</span><span class="sl">축 바꾸기</span></button></li>
+    <li><button id="st3" data-go="3"><span class="sn">3</span><span class="sl">손계산</span></button></li>
+    <li><button id="st4" data-go="4"><span class="sn">4</span><span class="sl">정리</span></button></li>
+  </ol>
+
+  <!-- STEP 1 -->
+  <section class="sheet" id="s1" aria-labelledby="h1s">
+    <div>
+      <p class="eyebrow">STEP 1 / 4 · 예상하기</p>
+      <h2 id="h1s">10% 늘었다는 사실, 그래프로는 어떻게 보일까?</h2>
+    </div>
+
+    <div class="facts">
+      <div class="tile"><span class="k">1월 소득</span><span class="v">200</span></div>
+      <div class="tile"><span class="k">12월 소득</span><span class="v">220</span></div>
+      <div class="tile hl"><span class="k">실제 증가율</span><span class="v">+10%</span></div>
+    </div>
+
+    <div class="scene">
+      <p>책은 이 1년치 숫자를 <b>세로축을 0부터 시작하는</b> 꺾은선 그래프로 그렸다. 모눈종이에 점을 찍어 이으면 선은 거의 평평하게 살짝 올라간다.</p>
+      <p class="pen">“이 그래프, 발표하는 사람 입장에선 좀 심심하지 않을까?”</p>
+    </div>
+
+    <div>
+      <h3>성과를 크게 보이고 싶은 사람이라면, 그래프의 무엇을 바꿀까?</h3>
+      <div class="chips" id="belief" role="group" aria-label="내 생각">
+        <button class="chip" data-v="숫자를 부풀린다" aria-pressed="false">숫자를 부풀린다</button>
+        <button class="chip" data-v="세로축 아래를 잘라낸다" aria-pressed="false">세로축 아래를 잘라낸다</button>
+        <button class="chip" data-v="세로축 눈금 간격을 늘린다" aria-pressed="false">세로축 눈금 간격을 늘린다</button>
+        <button class="chip" data-v="잘 모르겠다" aria-pressed="false">잘 모르겠다</button>
+      </div>
+    </div>
+
+    <div>
+      <h3>세로축을 0이 아니라 <span class="num">190</span>부터 그린다면?</h3>
+      <div class="predict">
+        <div class="row"><label for="pGuess">12월 선의 높이는 1월의 몇 배로 보일까? (느낌으로)</label><span class="pin"><input id="pGuess" type="number" inputmode="decimal" step="0.1" placeholder="?"> 배</span></div>
+      </div>
+      <p class="hint">계산하지 말고 감으로 적자. STEP 2에서 실제 그림과 비교한다.</p>
+    </div>
+
+    <div class="nav"><span class="spacer"></span><button class="navbtn" data-go="2">STEP 2 · 축 바꿔 보기 →</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="sheet" id="s2" aria-labelledby="h2s" hidden>
+    <div>
+      <p class="eyebrow">STEP 2 / 4 · 축 바꿔 보기</p>
+      <h2 id="h2s">숫자는 그대로, 세로축만 바꾸면</h2>
+    </div>
+    <p class="lead">데이터는 한 글자도 바꾸지 않는다. <b>세로축이 시작하는 값</b>과 <b>끝나는 값</b>만 움직여 보자.</p>
+
+    <div class="controls">
+      <span class="ctl-label">미리 보기</span>
+      <div class="seg" role="group" aria-label="세로축 설정">
+        <button data-p="0,240" aria-pressed="true">A · 0부터</button>
+        <button data-p="180,240" aria-pressed="false">B · 아래 자르기</button>
+        <button data-p="198,222" aria-pressed="false">C · 자르고 확대</button>
+      </div>
+    </div>
+
+    <figure>
+      <figcaption>월별 국민소득 <span class="lg">단위: 억 달러 · 빨간 막대 = 바닥에서 잰 선의 높이</span></figcaption>
+      <div class="chartbox">
+        <svg id="chart" viewBox="0 0 640 330" role="img" aria-label="월별 국민소득 꺾은선 그래프"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+    </figure>
+
+    <div class="sliders">
+      <div class="sl"><label for="ymin">세로축 시작값 <b id="yminV">0</b></label><input type="range" id="ymin" min="0" max="199" step="1" value="0"></div>
+      <div class="sl"><label for="ymax">세로축 끝값 <b id="ymaxV">240</b></label><input type="range" id="ymax" min="221" max="400" step="1" value="240"></div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="brk" checked> 축을 잘랐다는 표시(물결선) 넣기</label>
+
+    <div class="stats">
+      <div class="tile"><span class="k">세로축 범위</span><span class="v" id="tRange">0 ~ 240</span></div>
+      <div class="tile hl"><span class="k">12월 높이 ÷ 1월 높이</span><span class="v" id="tRatio">1.10배</span></div>
+      <div class="tile" id="tFacBox"><span class="k">과장 배율</span><span class="v" id="tFac">1.0배</span></div>
+    </div>
+    <p class="note">과장 배율 = 눈에 보이는 증가율 ÷ 실제 증가율(10%). 1.0배면 정직한 그림이다.</p>
+
+    <div class="recall">
+      <span id="recallTxt">STEP 1 내 예상: <b>아직 적지 않음</b></span>
+      <button class="btn" id="to190">시작값을 190에 맞춰 확인하기</button>
+    </div>
+
+    <p class="pen">숫자는 하나도 안 바뀌었는데, 그림은 완전히 다른 이야기를 한다!</p>
+
+    <div class="nav"><button class="navbtn" data-go="1">← STEP 1</button><button class="navbtn" data-go="3">STEP 3 · 손으로 계산 →</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="sheet" id="s3" aria-labelledby="h3s" hidden>
+    <div>
+      <p class="eyebrow">STEP 3 / 4 · 손으로 계산</p>
+      <h2 id="h3s">‘몇 배로 보이는지’ 직접 구해 보자</h2>
+    </div>
+    <p class="lead">그림에서 선의 높이는 0이 아니라 <b>세로축이 시작하는 곳</b>부터 잰다. 시작값을 a라고 하면</p>
+    <p class="formula">보이는 배수 = (220 − a) ÷ (200 − a)<small>예: a = 0 → 220 ÷ 200 = 1.1배 (실제 그대로)</small></p>
+
+    <div>
+      <h3>표를 채워 보자 <span style="font-weight:400;color:var(--muted);font-size:13px">소수 둘째 자리까지 · 다 채우면 채점</span></h3>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>시작값 a</th><th>1월 높이</th><th>12월 높이</th><th>보이는 배수</th><th></th></tr></thead>
+          <tbody class="calc">
+            <tr><td class="num ex">0</td><td class="num ex">200</td><td class="num ex">220</td><td class="num ex">1.1</td><td class="ex"><span class="mark">예</span></td></tr>
+            <tr data-a="100"><td class="num">100</td><td><input type="number" inputmode="decimal" data-k="lo"></td><td><input type="number" inputmode="decimal" data-k="hi"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="r"></td><td><span class="mark"></span></td></tr>
+            <tr data-a="180"><td class="num">180</td><td><input type="number" inputmode="decimal" data-k="lo"></td><td><input type="number" inputmode="decimal" data-k="hi"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="r"></td><td><span class="mark"></span></td></tr>
+            <tr data-a="190"><td class="num">190</td><td><input type="number" inputmode="decimal" data-k="lo"></td><td><input type="number" inputmode="decimal" data-k="hi"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="r"></td><td><span class="mark"></span></td></tr>
+            <tr data-a="198"><td class="num">198</td><td><input type="number" inputmode="decimal" data-k="lo"></td><td><input type="number" inputmode="decimal" data-k="hi"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="r"></td><td><span class="mark"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="controls"><button class="btn primary" id="grade">채점하기</button><span class="hint" id="gradeMsg">틀린 칸은 STEP 2 슬라이더로 직접 맞춰 보고 다시 계산하자.</span></div>
+
+    <div class="qs">
+      <div class="q">
+        <span class="qn">더</span>
+        <p>거꾸로 생각하기: 10% 증가를 <b>3배</b>로 보이게 하려면 세로축을 어디서 시작해야 할까? 방정식을 세워 풀어 보자.</p>
+        <details><summary>풀이 보기</summary>
+          <div class="ans">(220 − a) = 3(200 − a) → 220 − a = 600 − 3a → 2a = 380 → <b>a = 190</b>. STEP 1에서 감으로 적은 값과 비교해 보자.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">더</span>
+        <p>a가 200에 가까워질수록 보이는 배수는 어떻게 될까? a = 199, 199.9를 넣어 보자.</p>
+        <details><summary>풀이 보기</summary>
+          <div class="ans">a = 199 → 21 ÷ 1 = 21배, a = 199.9 → 20.1 ÷ 0.1 = 201배. 분모 (200 − a)가 0에 가까워지므로 <b>한없이 커진다</b>. 세로축 시작값 하나로 같은 10%를 얼마든지 과장할 수 있다는 뜻이다.</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="nav"><button class="navbtn" data-go="2">← STEP 2</button><button class="navbtn" data-go="4">STEP 4 · 정리하기 →</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="sheet" id="s4" aria-labelledby="h4s" hidden>
+    <div>
+      <p class="eyebrow">STEP 4 / 4 · 정리하기</p>
+      <h2 id="h4s">그래프는 숫자가 아니라 ‘길이’로 말한다</h2>
+    </div>
+
+    <div class="law">
+      <span class="t">오늘의 정리</span>
+      <p class="main">세로축 아래를 잘라내면 숫자는 그대로여도, 눈에 보이는 <b>변화의 크기</b>가 달라진다.</p>
+      <p>사람의 눈은 눈금 숫자보다 선의 높이와 기울기를 먼저 읽는다. 그래서 그래프를 볼 때는 선보다 <b>세로축의 시작값과 눈금 간격</b>을 먼저 확인해야 한다.</p>
+    </div>
+
+    <p class="recall" id="recall2">STEP 1에서 고른 내 생각: <b>아직 고르지 않음</b></p>
+
+    <div class="qs">
+      <div class="q">
+        <span class="qn">Q1</span>
+        <p>A(0부터)와 C(자르고 확대) 중 숫자가 틀린 그래프는 무엇일까?</p>
+        <details><summary>답 보기</summary>
+          <div class="ans">둘 다 숫자는 맞다. 틀린 것은 숫자가 아니라 그림이 주는 <b>인상</b>이다. 그래서 이런 그래프는 ‘거짓말’이라고 따지기도 어렵다. 그래서 더 조심해야 한다.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q2</span>
+        <p>세로축을 0부터 시작하지 <b>않는</b> 것이 오히려 적절한 경우도 있을까?</p>
+        <details><summary>답 보기</summary>
+          <div class="ans">있다. 체온(36~38℃)처럼 작은 변화 자체가 중요한 자료는 0부터 그리면 변화가 안 보인다. 이때는 물결선(≈)으로 축을 잘랐다고 표시하고, 눈금 숫자를 분명히 적는 것이 정직한 방법이다.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q3</span>
+        <p>이 그래프만으로는 <b>알 수 없는 것</b>은 무엇일까? 어떤 자료가 더 있어야 할까?</p>
+        <details><summary>생각할 거리</summary>
+          <div class="ans">같은 해 물가가 얼마나 올랐는지(실질 소득), 인구가 늘었는지(1인당 소득), 작년이나 다른 나라와 비교하면 큰 증가인지. 그래프 밖의 비교 기준이 있어야 ‘10%’가 큰지 작은지 판단할 수 있다.</div>
+        </details>
+      </div>
+    </div>
+
+    <p class="mine"><b>나만의 질문 1개</b> · 뉴스나 광고에서 ‘급등’, ‘폭증’이라는 말과 함께 나온 그래프를 하나 찾아보자. 세로축은 어디서 시작할까?</p>
+    <p class="note">월별 값은 책의 조건(1년간 200 → 220, 10% 증가)에 맞춰 수업용으로 만든 가상 데이터입니다.</p>
+
+    <div class="nav"><button class="navbtn" data-go="3">← STEP 3</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var data=[200,201.5,203,204.5,206,207.5,209.5,211,213,215,217.5,220];
+  var st={ymin:0,ymax:240}, belief=null, current=1;
+
+  /* ---------- steps ---------- */
+  function render(){
+    var m=/^#s([1-4])$/.exec(location.hash); current=m?+m[1]:1;
+    for(var i=1;i<=4;i++){
+      $('s'+i).hidden=(i!==current);
+      $('st'+i).setAttribute('aria-current',i===current?'step':'false');
+    }
+    if(current===2){draw();fillRecall();}
+    if(current===4){$('recall2').innerHTML='STEP 1에서 고른 내 생각: <b>'+(belief||'아직 고르지 않음')+'</b> · 지금은 어떻게 생각하는지 이유와 함께 적어 보자.';}
+  }
+  function go(i){ if(location.hash!=='#s'+i){location.hash='s'+i}else{render()} window.scrollTo(0,0); }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(+b.getAttribute('data-go'))})});
+  window.addEventListener('hashchange',render);
+
+  /* ---------- step 1 ---------- */
+  document.querySelectorAll('#belief .chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      belief=b.getAttribute('data-v');
+      document.querySelectorAll('#belief .chip').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    });
+  });
+  function fillRecall(){
+    var v=$('pGuess').value.trim();
+    $('recallTxt').innerHTML='STEP 1 내 예상 (시작값 190): <b>'+(v===''?'아직 적지 않음':v+'배')+'</b>';
+  }
+
+  /* ---------- step 2: chart ---------- */
+  var NS='http://www.w3.org/2000/svg', svg=$('chart'), tip=$('tip');
+  var W=640,H=330,m={l:44,r:40,t:18,b:32}, pw, ph;
+  function size(){var w=Math.max(300,Math.round(svg.parentElement.clientWidth-8)||640);W=w;H=w<520?Math.round(w*0.82):330;m.r=w<520?40:46;pw=W-m.l-m.r;ph=H-m.t-m.b;svg.setAttribute('viewBox','0 0 '+W+' '+H)}
+  function el(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e}
+  function X(i){return m.l+i/(data.length-1)*pw}
+  function Y(v){return m.t+ph-(v-st.ymin)/(st.ymax-st.ymin)*ph}
+  function niceStep(r){var raw=r/6,p=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/p;return (n<1.5?1:n<3?2:n<7?5:10)*p}
+  function txt(a,s){var e=el('text',a);e.textContent=s;return e}
+
+  function draw(){
+    size(); svg.innerHTML='';
+    var step=niceStep(st.ymax-st.ymin), base=m.t+ph, showBrk=st.ymin>0&&$('brk').checked;
+    for(var v=Math.ceil(st.ymin/step)*step; v<=st.ymax+1e-9; v+=step){
+      var yy=Math.round(Y(v))+.5;
+      el('line',{x1:m.l,x2:W-m.r,y1:yy,y2:yy,'class':'grid'});
+      if(!(showBrk&&base-yy<16)) txt({x:m.l-8,y:yy+4,'text-anchor':'end','class':'tick'},+v.toFixed(2));
+    }
+    data.forEach(function(_,i){txt({x:X(i),y:base+18,'text-anchor':'middle','class':'tick'},i+1)});
+    txt({x:W-4,y:base+18,'text-anchor':'end','class':'unit'},'(월)');
+    el('path',{d:'M'+X(0)+','+base+' L'+data.map(function(v,i){return X(i)+','+Y(v)}).join(' L')+' L'+X(data.length-1)+','+base+' Z','class':'area'});
+    el('line',{x1:m.l,x2:m.l,y1:m.t,y2:base,'class':'ax'});
+    el('line',{x1:m.l,x2:W-m.r,y1:base,y2:base,'class':'ax'});
+    if(showBrk){
+      var by=base-8;
+      el('rect',{x:m.l-8,y:by-6,width:16,height:12,fill:'var(--sheet)'});
+      el('path',{d:'M'+(m.l-9)+','+(by-2)+' q3,-5 6,0 t6,0 t6,0','class':'brk'});
+      el('path',{d:'M'+(m.l-9)+','+(by+4)+' q3,-5 6,0 t6,0 t6,0','class':'brk'});
+    }
+    el('path',{d:'M'+data.map(function(v,i){return X(i)+','+Y(v)}).join(' L'),'class':'ln'});
+    // height bars (1월, 12월)
+    [[0,1],[data.length-1,1]].forEach(function(p){
+      var i=p[0], x=X(i)+(i===0?12:14), h=data[i]-st.ymin;
+      el('line',{x1:x,x2:x,y1:base,y2:Y(data[i]),'class':'hgt'});
+      el('line',{x1:x-4,x2:x+4,y1:Y(data[i]),y2:Y(data[i]),'class':'hgt'});
+      txt({x:x+(p[1]<0?-6:6),y:(base+Y(data[i]))/2+4,'text-anchor':p[1]<0?'end':'start','class':'hgtT'},+h.toFixed(1));
+      el('circle',{cx:X(i),cy:Y(data[i]),r:5,'class':'dt'});
+    });
+    // hover
+    var cross=el('line',{y1:m.t,y2:base,stroke:'var(--muted)','stroke-dasharray':'3 3',opacity:0});
+    var dot=el('circle',{r:6,'class':'dt',opacity:0});
+    var hit=el('rect',{x:m.l-10,y:0,width:pw+20,height:H,fill:'transparent'});
+    function move(ev){
+      var r=svg.getBoundingClientRect(), cx=(ev.clientX-r.left)/r.width*W;
+      var i=Math.max(0,Math.min(data.length-1,Math.round((cx-m.l)/pw*(data.length-1))));
+      var px=X(i),py=Y(data[i]);
+      cross.setAttribute('x1',px);cross.setAttribute('x2',px);cross.setAttribute('opacity',1);
+      dot.setAttribute('cx',px);dot.setAttribute('cy',py);dot.setAttribute('opacity',1);
+      tip.innerHTML='<b>'+(i+1)+'월</b> · <span class="num">'+data[i]+'</span>억 달러 <span style="color:var(--muted)">(1월 대비 +'+((data[i]/200-1)*100).toFixed(1)+'%)</span>';
+      var sx=px/W*r.width+4, sy=py/H*r.height+6;
+      tip.style.left=Math.min(Math.max(sx-tip.offsetWidth/2,4),r.width-tip.offsetWidth)+'px';
+      tip.style.top=Math.max(sy-44,0)+'px'; tip.style.opacity=1;
+    }
+    function leave(){cross.setAttribute('opacity',0);dot.setAttribute('opacity',0);tip.style.opacity=0}
+    hit.addEventListener('pointermove',move);hit.addEventListener('pointerdown',move);hit.addEventListener('pointerleave',leave);
+
+    var ratio=(220-st.ymin)/(200-st.ymin), fac=(ratio-1)/0.1;
+    $('yminV').textContent=st.ymin; $('ymaxV').textContent=st.ymax;
+    $('tRange').textContent=st.ymin+' ~ '+st.ymax;
+    $('tRatio').textContent=(ratio<10?ratio.toFixed(2):ratio.toFixed(1))+'배';
+    $('tFac').textContent=(fac<10?fac.toFixed(1):Math.round(fac))+'배';
+    $('tFacBox').classList.toggle('warn',fac>=1.5);
+  }
+  function setSeg(btn){document.querySelectorAll('[data-p]').forEach(function(b){b.setAttribute('aria-pressed',b===btn?'true':'false')})}
+  document.querySelectorAll('[data-p]').forEach(function(b){b.addEventListener('click',function(){
+    var p=b.getAttribute('data-p').split(',').map(Number);
+    st.ymin=p[0];st.ymax=p[1];$('ymin').value=p[0];$('ymax').value=p[1];setSeg(b);draw();
+  })});
+  $('ymin').addEventListener('input',function(){st.ymin=+this.value;setSeg(null);draw()});
+  $('ymax').addEventListener('input',function(){st.ymax=+this.value;setSeg(null);draw()});
+  $('brk').addEventListener('change',draw);
+  $('to190').addEventListener('click',function(){st.ymin=190;$('ymin').value=190;if(st.ymax<=221){st.ymax=240;$('ymax').value=240}setSeg(null);draw()});
+  window.addEventListener('resize',function(){tip.style.opacity=0;if(current===2)draw()});
+
+  /* ---------- step 3: grading ---------- */
+  $('grade').addEventListener('click',function(){
+    var ok=0,total=0;
+    document.querySelectorAll('tr[data-a]').forEach(function(tr){
+      var a=+tr.getAttribute('data-a'), lo=200-a, hi=220-a, r=hi/lo;
+      var g=function(k){var v=tr.querySelector('[data-k="'+k+'"]').value.trim();return v===''?NaN:+v};
+      var good=Math.abs(g('lo')-lo)<1e-6 && Math.abs(g('hi')-hi)<1e-6 && Math.abs(g('r')-r)<=0.011;
+      var mk=tr.querySelector('.mark'); mk.textContent=good?'✓':'✗'; mk.className='mark '+(good?'ok':'no');
+      total++; if(good) ok++;
+    });
+    $('gradeMsg').textContent=ok===total?'모두 맞았다! 아래 ‘더’ 문제로 넘어가 보자.':ok+' / '+total+' 맞음 · 높이는 바닥(시작값 a)부터 잰다는 것을 다시 떠올려 보자.';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

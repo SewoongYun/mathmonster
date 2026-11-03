@@ -1,0 +1,580 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>동전 던지기 실험실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: 4-step lab notebook (예상 → 혼자 던지기 → 30명 → 정리), one step visible at a time; same token system as 「평균급여의 속임수」 */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#E1E9F5;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1E2A3F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1E2A3F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* header + stepper */
+.top{margin-bottom:12px}
+.book{font-size:13px;color:var(--muted);letter-spacing:.02em;margin:0}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.4vw,34px);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+.stepper{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stepper button{width:100%;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-width:0}
+.stepper .sn{font-family:var(--f-num);font-weight:600;color:var(--muted)}
+.stepper .sl{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stepper button[aria-current="step"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.stepper button[aria-current="step"] .sn{color:var(--sheet)}
+@media (max-width:560px){.stepper .sl{font-size:12.5px}}
+
+/* sheet */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:26px 22px;padding-inline:clamp(18px,4vw,38px);display:flex;flex-direction:column;gap:20px}
+.sheet[hidden]{display:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.sheet h2{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.6vw,28px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.lead{margin:0;max-width:64ch}
+h3{font-size:15px;font-weight:700;margin:0 0 6px}
+.pen{font-family:var(--f-pen);color:var(--red);font-size:25px;line-height:1.15;margin:0;transform:rotate(-2deg);transform-origin:left center}
+
+/* step 1 */
+.bq{margin:0;border-left:3px solid var(--red);padding:4px 0 4px 16px}
+.bq p{font-family:var(--f-display);font-weight:700;font-size:clamp(17px,2.6vw,20px);line-height:1.55;margin:0}
+.bq cite{display:block;font-style:normal;font-size:13px;color:var(--muted);margin-top:4px}
+.scene{background:var(--paper);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.scene p{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:7px 16px;cursor:pointer;font-size:14.5px}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.predict{border-top:2px solid var(--ink)}
+.predict .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;padding:10px 2px;border-top:1px solid var(--rule)}
+.predict .row:first-of-type{border-top:0}
+.predict label{font-weight:500}
+.pin{display:flex;align-items:center;gap:6px}
+.pin input{width:5.5em;font-family:var(--f-num);font-size:16px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:right}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+
+/* step 2 */
+.bench{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+@media (max-width:560px){.bench{grid-template-columns:1fr}}
+.coinbox{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;perspective:400px}
+.coin{width:86px;height:86px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:28px;background:var(--paper);border:3px dashed var(--rule);color:var(--muted)}
+.coin[data-face="H"]{background:var(--amber-soft);border:3px solid var(--amber);color:var(--ink)}
+.coin[data-face="T"]{background:var(--slate-soft);border:3px solid var(--slate);color:var(--ink)}
+.coin.flip{animation:flip .45s ease-out}
+@keyframes flip{0%{transform:rotateY(0) scale(1)}50%{transform:rotateY(540deg) scale(1.12)}100%{transform:rotateY(720deg) scale(1)}}
+.coin-cap{font-size:13px;color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;min-width:0}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.tile{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;min-width:0}
+.tile .k{font-size:12.5px;color:var(--muted);display:block}
+.tile .v{font-family:var(--f-num);font-weight:600;font-size:clamp(20px,3.2vw,26px);line-height:1.3;font-variant-numeric:tabular-nums}
+.tile.hl{border-color:var(--ink)}
+.controls{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:4px;padding:8px 14px;cursor:pointer;font-weight:500;font-size:14.5px}
+.btn:hover{background:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--sheet)}
+.btn.primary:hover{opacity:.9}
+.btn.ghost{border-color:var(--rule);color:var(--muted)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sep{flex:1}
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+figcaption{font-size:14px;font-weight:700;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+figcaption .lg{font-weight:400;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--ink)}
+.sw.red{border-top:2px dashed var(--red)}
+.sw.band{height:10px;border:0;background:var(--slate-soft)}
+.chartbox{position:relative;border:1px solid var(--rule);border-radius:4px;padding:8px 4px 4px;min-width:0}
+.chartbox canvas{display:block;width:100%}
+.empty[hidden]{display:none}
+.empty{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--muted);font-size:14px;pointer-events:none}
+.recent{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.recent .k{font-size:13px;color:var(--muted);margin-right:6px}
+.rc{width:24px;height:24px;border-radius:3px;display:grid;place-items:center;font-size:12px;font-weight:700}
+.rc.H{background:var(--amber-soft);color:var(--ink)}
+.rc.T{background:var(--slate-soft);color:var(--ink)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--ink)}
+td.num{font-weight:500}
+td.dim{color:var(--muted)}
+
+/* step 3 */
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--sheet);padding:8px 14px;cursor:pointer;font-weight:500;font-size:14.5px;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.ctl-label{font-size:14px;color:var(--muted);align-self:center}
+.svgbox{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
+.svgbox svg{display:block;width:100%;min-width:520px;height:auto}
+svg text{font-family:var(--f-body)}
+svg .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+svg .zone-l{font-size:11.5px;fill:var(--muted)}
+svg .zone-r{font-size:11.5px;fill:var(--red);font-weight:700}
+svg .empty-t{font-size:14px;fill:var(--muted)}
+.d-ext{fill:var(--red)}
+.d-mid{fill:var(--ink)}
+.d-oth{fill:var(--slate)}
+.z-mid{fill:var(--slate-soft)}
+.z-ext{fill:var(--red-soft)}
+.ax{stroke:var(--muted);stroke-width:1}
+.c50{stroke:var(--red);stroke-width:1.2;stroke-dasharray:4 4}
+.summary{margin:0;font-weight:500}
+.summary b{color:var(--red)}
+
+/* step 4 */
+.law{border:2px solid var(--ink);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.law .t{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.law p{margin:0}
+.law .main{font-family:var(--f-display);font-weight:800;font-size:clamp(18px,2.8vw,21px);line-height:1.5}
+.recall{margin:0;background:var(--paper);border-radius:4px;padding:12px 14px}
+.recall b{color:var(--red)}
+.qs{border-top:2px solid var(--ink)}
+.q{display:grid;grid-template-columns:2.4em 1fr;gap:4px 10px;padding:12px 0;border-top:1px solid var(--rule)}
+.q:first-child{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0}
+.q details{grid-column:2;font-size:14.5px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.mine{margin:0;font-size:14.5px;color:var(--muted)}
+.mine b{color:var(--ink)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.navbtn{border:1px solid var(--rule);background:none;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500}
+.navbtn:hover{border-color:var(--ink)}
+.spacer{flex:1}
+@media (prefers-reduced-motion:reduce){.coin.flip{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="book">『새빨간 거짓말, 통계』 68쪽 · 큰 수의 법칙</p>
+    <h1>동전 던지기 실험실</h1>
+  </header>
+
+  <ol class="stepper" aria-label="실험 단계">
+    <li><button id="st1" data-go="1"><span class="sn">1</span><span class="sl">예상하기</span></button></li>
+    <li><button id="st2" data-go="2"><span class="sn">2</span><span class="sl">혼자 던지기</span></button></li>
+    <li><button id="st3" data-go="3"><span class="sn">3</span><span class="sl">30명이 던지기</span></button></li>
+    <li><button id="st4" data-go="4"><span class="sn">4</span><span class="sl">정리하기</span></button></li>
+  </ol>
+
+  <!-- STEP 1 -->
+  <section class="sheet" id="s1" aria-labelledby="h1s">
+    <div>
+      <p class="eyebrow">STEP 1 / 4 · 예상하기</p>
+      <h2 id="h1s">동전 10번으로 무엇을 알 수 있을까?</h2>
+    </div>
+    <blockquote class="bq">
+      <p>“시행횟수가 충분히 커야만 여러 현상을 제대로 설명하거나 쓸모 있는 예측을 할 수 있게 한다.”</p>
+      <cite>68쪽</cite>
+    </blockquote>
+
+    <div class="scene">
+      <p>친구가 동전을 10번 던졌더니 <b>앞면이 8번</b> 나왔다. 친구가 말한다.</p>
+      <p class="pen">“이 동전은 앞면이 잘 나오는 동전이야!”</p>
+    </div>
+
+    <div>
+      <h3>친구 말을 믿을 수 있을까?</h3>
+      <div class="chips" id="belief" role="group" aria-label="내 생각">
+        <button class="chip" id="b1" data-v="믿을 수 있다" aria-pressed="false">믿을 수 있다</button>
+        <button class="chip" id="b2" data-v="믿기 어렵다" aria-pressed="false">믿기 어렵다</button>
+        <button class="chip" id="b3" data-v="더 던져 봐야 안다" aria-pressed="false">더 던져 봐야 안다</button>
+      </div>
+    </div>
+
+    <div>
+      <h3>공정한 동전이라면, 앞면 비율은 몇 %쯤 나올까?</h3>
+      <div class="predict">
+        <div class="row"><label for="p10">10번 던지면</label><span class="pin"><input id="p10" type="number" inputmode="numeric" min="0" max="100" placeholder="?"> %</span></div>
+        <div class="row"><label for="p100">100번 던지면</label><span class="pin"><input id="p100" type="number" inputmode="numeric" min="0" max="100" placeholder="?"> %</span></div>
+        <div class="row"><label for="p1000">1,000번 던지면</label><span class="pin"><input id="p1000" type="number" inputmode="numeric" min="0" max="100" placeholder="?"> %</span></div>
+      </div>
+      <p class="hint">적은 예상은 STEP 2의 기록표에 실험 결과와 나란히 나온다.</p>
+    </div>
+
+    <div class="nav"><span class="spacer"></span><button class="navbtn" data-go="2">STEP 2 · 혼자 던지기 →</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="sheet" id="s2" aria-labelledby="h2s" hidden>
+    <div>
+      <p class="eyebrow">STEP 2 / 4 · 혼자 던지기</p>
+      <h2 id="h2s">많이 던질수록 무엇이 달라질까?</h2>
+    </div>
+    <p class="lead">처음엔 1번씩 던져 보고, 그다음 100번, 1,000번씩 던져 보자. 앞면 비율 그래프가 어떻게 움직이는지 본다.</p>
+
+    <div class="bench">
+      <div class="coinbox">
+        <div class="coin" id="coin" data-face="" aria-live="polite">?</div>
+        <p class="coin-cap" id="coinCap">아직 안 던짐</p>
+      </div>
+      <div class="stats">
+        <div class="tile"><span class="k">던진 횟수</span><span class="v" id="vN">0</span></div>
+        <div class="tile"><span class="k">앞면</span><span class="v" id="vH">0</span></div>
+        <div class="tile hl"><span class="k">앞면 비율</span><span class="v" id="vR">–</span></div>
+        <div class="tile"><span class="k">앞면−뒷면 차이</span><span class="v" id="vD">0</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="t1">1번 던지기</button>
+      <button class="btn" id="t10">10번</button>
+      <button class="btn" id="t100">100번</button>
+      <button class="btn" id="t1000">1,000번</button>
+      <button class="btn" id="tAuto">▶ 자동으로 계속 던지기</button>
+      <span class="sep"></span>
+      <button class="btn ghost" id="tReset">처음부터</button>
+    </div>
+
+    <figure>
+      <figcaption>앞면 비율의 변화 <span class="lg">가로축: 던진 횟수</span>
+        <span class="lg"><i class="sw"></i>내 실험</span>
+        <span class="lg"><i class="sw red"></i>수학적 확률 1/2</span>
+        <span class="lg"><i class="sw band"></i>45~55%</span>
+      </figcaption>
+      <div class="chartbox">
+        <canvas id="run" aria-label="던진 횟수에 따른 앞면 비율 그래프"></canvas>
+        <p class="empty" id="runEmpty">버튼을 눌러 동전을 던져 보자</p>
+      </div>
+    </figure>
+
+    <div class="recent" id="recent"><span class="k">최근 20번</span></div>
+
+    <div>
+      <h3>기록표 <span style="font-weight:400;color:var(--muted);font-size:13px">해당 횟수에 도달하면 자동으로 채워진다 (최대 10,000번)</span></h3>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>던진 횟수</th><th>내 예상</th><th>앞면 비율</th><th>앞면−뒷면 차이</th></tr></thead>
+          <tbody id="cpBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="pen">비율은 50%에 다가가는데… 차이도 0으로 갈까?</p>
+
+    <div class="nav"><button class="navbtn" data-go="1">← STEP 1</button><button class="navbtn" data-go="3">STEP 3 · 30명이 던지기 →</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="sheet" id="s3" aria-labelledby="h3s" hidden>
+    <div>
+      <p class="eyebrow">STEP 3 / 4 · 30명이 던지기</p>
+      <h2 id="h3s">10번씩 던진 30명 vs 1,000번씩 던진 30명</h2>
+    </div>
+    <p class="lead">30명이 각자 <b>공정한</b> 동전을 같은 횟수만큼 던진다. 앞면 비율이 80% 이상이거나 20% 이하인 사람은 “이 동전 이상해!”라고 착각하게 된다. 누르기 전에 몇 명일지 먼저 예상해 보자.</p>
+
+    <div class="controls">
+      <span class="ctl-label">한 사람당</span>
+      <div class="seg" role="group" aria-label="한 사람당 던지는 횟수">
+        <button id="per10" data-per="10" aria-pressed="true">10번</button>
+        <button id="per100" data-per="100" aria-pressed="false">100번</button>
+        <button id="per1000" data-per="1000" aria-pressed="false">1,000번</button>
+      </div>
+      <button class="btn primary" id="runGroup">30명 실험하기</button>
+    </div>
+
+    <figure>
+      <figcaption>30명의 앞면 비율 <span class="lg">점 하나 = 한 사람 · 5% 단위로 묶어 표시</span></figcaption>
+      <div class="svgbox" id="dotBox"></div>
+    </figure>
+    <p class="summary" id="groupSummary">아직 실험 전이다.</p>
+
+    <div>
+      <h3>실험 기록</h3>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>한 사람당</th><th>가장 낮은 비율</th><th>가장 높은 비율</th><th>착각한 사람</th><th>45~55% 안</th></tr></thead>
+          <tbody id="logBody"><tr><td class="dim" colspan="5">10번, 100번, 1,000번을 각각 실험해서 비교해 보자.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="nav"><button class="navbtn" data-go="2">← STEP 2</button><button class="navbtn" data-go="4">STEP 4 · 정리하기 →</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="sheet" id="s4" aria-labelledby="h4s" hidden>
+    <div>
+      <p class="eyebrow">STEP 4 / 4 · 정리하기</p>
+      <h2 id="h4s">왜 ‘충분히 많이’ 던져야 할까?</h2>
+    </div>
+
+    <div class="law">
+      <span class="t">큰 수의 법칙</span>
+      <p class="main">시행 횟수가 커질수록, 앞면이 나온 비율(상대도수)은 수학적 확률 1/2에 가까워진다.</p>
+      <p>10번 던진 결과는 30명 중 몇 명에게서 크게 빗나간다. 1,000번이면 거의 모두 50% 근처에 모인다. 그래서 10번 실험 하나로 “이 동전은 이상하다”고 결론 내리면 안 된다.</p>
+    </div>
+
+    <p class="recall" id="recall">STEP 1에서 고른 내 생각: <b>아직 고르지 않음</b> · 지금은 어떻게 생각하는지 이유와 함께 학습지에 적어 보자.</p>
+
+    <div class="qs">
+      <div class="q">
+        <span class="qn">Q1</span>
+        <p>던진 횟수가 늘면 앞면 ‘비율’은 1/2에 가까워졌다. 그럼 앞면과 뒷면 ‘횟수의 차이’도 0에 가까워졌을까? STEP 2 기록표에서 확인해 보자.</p>
+        <details id="qa1"><summary>답 보기</summary>
+          <div class="ans">아니다. 차이는 오히려 커지는 경우가 많다. 평균적으로 1,000번이면 약 25번, 10,000번이면 약 80번 차이가 난다. 그런데도 비율이 1/2에 가까워지는 건, 차이가 던진 횟수에 비해 상대적으로 작아지기 때문이다. (25 ÷ 1,000 = 2.5%, 80 ÷ 10,000 = 0.8%)</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q2</span>
+        <p>앞면이 5번 연속 나왔다. 다음 번에 뒷면이 나올 확률은 1/2보다 클까?</p>
+        <details id="qa2"><summary>답 보기</summary>
+          <div class="ans">아니다. 여전히 1/2이다. 동전은 앞의 결과를 기억하지 못한다. 큰 수의 법칙은 앞의 쏠림을 ‘되돌려 맞춘다’는 뜻이 아니다. 앞으로 많이 던질수록 그 쏠림이 전체 비율에서 묽어진다는 뜻이다. (이런 착각을 ‘도박사의 오류’라고 부른다.)</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q3</span>
+        <p>더 해보기 (경우의 수): 공정한 동전을 10번 던져서 앞면이 8번 이상 또는 2번 이하 나올 확률은? STEP 3의 ‘착각한 사람’ 수와 비교해 보자.</p>
+        <details id="qa3"><summary>답 보기</summary>
+          <div class="ans">앞면 8·9·10번: ₁₀C₈ + ₁₀C₉ + ₁₀C₁₀ = 45 + 10 + 1 = 56가지. 2·1·0번도 똑같이 56가지. 전체는 2¹⁰ = 1,024가지이므로 112 ÷ 1,024 ≈ <b>10.9%</b>. 30명 중 평균 3명 정도는 정상 동전으로도 ‘이상한 결과’를 얻는다.</div>
+        </details>
+      </div>
+    </div>
+
+    <p class="mine"><b>나만의 질문 1개</b> · 광고나 뉴스에서 “사용자 ○○명 중 ○○%가 효과를 봤다”는 문구를 보면, 나는 무엇부터 확인할까?</p>
+
+    <div class="nav"><button class="navbtn" data-go="3">← STEP 3</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+  function fmt(x){return Math.round(x).toLocaleString('ko-KR')}
+  function pct(x){return (Math.round(x*1000)/10)+'%'}
+
+  /* ---------- steps ---------- */
+  var current=1;
+  function render(){
+    var m=/^#s([1-4])$/.exec(location.hash); current=m?+m[1]:1;
+    for(var i=1;i<=4;i++){
+      $('s'+i).hidden=(i!==current);
+      $('st'+i).setAttribute('aria-current',i===current?'step':'false');
+    }
+    if(current===2){drawRun();renderCp();}
+    if(current===3){drawDots();}
+    if(current===4){fillRecall();}
+  }
+  function go(i){
+    i=Math.max(1,Math.min(4,i));
+    if(location.hash!=='#s'+i){location.hash='s'+i}else{render()}
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click',function(){go(+b.getAttribute('data-go'))});
+  });
+  window.addEventListener('hashchange',render);
+
+  /* ---------- step 1 ---------- */
+  var belief=null;
+  document.querySelectorAll('#belief .chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      belief=b.getAttribute('data-v');
+      document.querySelectorAll('#belief .chip').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    });
+  });
+  function fillRecall(){
+    $('recall').innerHTML='STEP 1에서 고른 내 생각: <b>'+(belief||'아직 고르지 않음')+'</b> · 지금은 어떻게 생각하는지 이유와 함께 학습지에 적어 보자.';
+  }
+
+  /* ---------- step 2: one coin ---------- */
+  var MAX=10000, n=0, h=0, ratios=[], recent=[];
+  var CPS=[10,100,1000,10000], cp={};
+  function tossOnce(){
+    if(n>=MAX) return null;
+    var head=Math.random()<0.5;
+    n++; if(head) h++;
+    ratios.push(h/n);
+    recent.push(head); if(recent.length>20) recent.shift();
+    if(CPS.indexOf(n)>-1) cp[n]={r:h/n,d:Math.abs(2*h-n)};
+    return head;
+  }
+  function toss(k,animate){
+    var last=null;
+    for(var i=0;i<k;i++){var r=tossOnce(); if(r===null) break; last=r;}
+    updateUI(last,animate);
+  }
+  function updateUI(last,animate){
+    var coin=$('coin');
+    if(n===0){coin.setAttribute('data-face','');coin.textContent='?';$('coinCap').textContent='아직 안 던짐';}
+    else if(last!==null){
+      coin.setAttribute('data-face',last?'H':'T'); coin.textContent=last?'앞':'뒤';
+      $('coinCap').textContent='마지막: '+(last?'앞면':'뒷면');
+      if(animate){coin.classList.remove('flip'); void coin.offsetWidth; coin.classList.add('flip');}
+    }
+    $('vN').textContent=fmt(n);
+    $('vH').textContent=fmt(h);
+    $('vR').textContent=n?pct(h/n):'–';
+    $('vD').textContent=fmt(Math.abs(2*h-n));
+    var rc=$('recent'); rc.innerHTML='<span class="k">최근 20번</span>';
+    recent.forEach(function(x){var s=document.createElement('span');s.className='rc '+(x?'H':'T');s.textContent=x?'앞':'뒤';rc.appendChild(s)});
+    if(!recent.length){var e=document.createElement('span');e.className='k';e.textContent='–';rc.appendChild(e)}
+    ['t1','t10','t100','t1000'].forEach(function(id){$(id).disabled=n>=MAX});
+    renderCp(); drawRun();
+  }
+  function predOf(k){
+    var el=$('p'+k); if(!el) return '–';
+    var v=el.value.trim(); return v===''?'–':v+'%';
+  }
+  function renderCp(){
+    var html='';
+    CPS.forEach(function(k){
+      var c=cp[k];
+      html+='<tr><td class="num">'+fmt(k)+'번</td><td class="num dim">'+predOf(k)+'</td>'+
+        (c?'<td class="num">'+pct(c.r)+'</td><td class="num">'+fmt(c.d)+'번</td>':'<td class="dim">–</td><td class="dim">–</td>')+'</tr>';
+    });
+    $('cpBody').innerHTML=html;
+  }
+  function niceMax(v){var s=[10,20,50,100,200,500,1000,2000,5000,10000];for(var i=0;i<s.length;i++){if(s[i]>=v) return s[i]}return 10000}
+  function drawRun(){
+    var cv=$('run'), box=cv.parentElement, w=box.clientWidth-8;
+    if(w<=0) return;
+    var H=w<520?230:290, dpr=window.devicePixelRatio||1;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv.style.height=H+'px';
+    var c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,H);
+    var L=46,R=w-34,T=10,B=H-28, xmax=niceMax(Math.max(n,1));
+    function X(i){return L+i/xmax*(R-L)} function Y(p){return B-p*(B-T)}
+    var mono='"IBM Plex Mono", ui-monospace, monospace';
+    c.fillStyle=css('--slate-soft'); c.fillRect(L,Y(.55),R-L,Y(.45)-Y(.55));
+    c.strokeStyle=css('--rule'); c.lineWidth=1; c.font='11px '+mono; c.fillStyle=css('--muted');
+    c.textAlign='right'; c.textBaseline='middle';
+    [0,.25,.5,.75,1].forEach(function(p){c.beginPath();c.moveTo(L,Math.round(Y(p))+.5);c.lineTo(R,Math.round(Y(p))+.5);c.stroke();c.fillText(Math.round(p*100)+'%',L-7,Y(p))});
+    c.textAlign='center'; c.textBaseline='top';
+    [0,.2,.4,.6,.8,1].forEach(function(f){var v=xmax*f;c.fillText(fmt(v),X(v),B+8)});
+    c.strokeStyle=css('--red'); c.setLineDash([5,4]); c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(L,Y(.5)); c.lineTo(R,Y(.5)); c.stroke(); c.setLineDash([]);
+    c.fillStyle=css('--red'); c.textAlign='left'; c.textBaseline='middle'; c.font='600 12px '+mono; c.fillText('1/2',R+5,Y(.5));
+    if(n>0){
+      c.strokeStyle=css('--ink'); c.lineWidth=1.75; c.lineJoin='round';
+      c.beginPath();
+      var step=Math.max(1,Math.floor(n/((R-L)*2)));
+      for(var i=0;i<n;i+=step){var x=X(i+1),y=Y(ratios[i]); if(i===0) c.moveTo(x,y); else c.lineTo(x,y)}
+      c.lineTo(X(n),Y(ratios[n-1])); c.stroke();
+      c.fillStyle=css('--ink'); c.beginPath(); c.arc(X(n),Y(ratios[n-1]),4,0,Math.PI*2); c.fill();
+    }
+    $('runEmpty').hidden=n>0;
+  }
+
+  $('t1').addEventListener('click',function(){stopAuto();toss(1,true)});
+  $('t10').addEventListener('click',function(){stopAuto();toss(10,true)});
+  $('t100').addEventListener('click',function(){stopAuto();toss(100,false)});
+  $('t1000').addEventListener('click',function(){stopAuto();toss(1000,false)});
+  $('tReset').addEventListener('click',function(){stopAuto();n=0;h=0;ratios=[];recent=[];cp={};updateUI(null,false)});
+
+  var raf=null, frame=0;
+  function autoStep(){
+    frame++;
+    if(n<30){ if(frame%4===0) toss(1,false); }
+    else { toss(Math.min(Math.max(1,Math.floor(n/40)),MAX-n),false); }
+    if(n<MAX){raf=requestAnimationFrame(autoStep)} else {stopAuto()}
+  }
+  function stopAuto(){ if(raf){cancelAnimationFrame(raf);raf=null} $('tAuto').textContent='▶ 자동으로 계속 던지기'; }
+  $('tAuto').addEventListener('click',function(){
+    if(raf){stopAuto();return}
+    if(n>=MAX) return;
+    $('tAuto').textContent='⏸ 멈추기'; frame=0; raf=requestAnimationFrame(autoStep);
+  });
+
+  /* ---------- step 3: 30 people ---------- */
+  var per=10, group=null, log=[];
+  document.querySelectorAll('[data-per]').forEach(function(b){
+    b.addEventListener('click',function(){
+      per=+b.getAttribute('data-per');
+      document.querySelectorAll('[data-per]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    });
+  });
+  $('runGroup').addEventListener('click',function(){
+    var res=[];
+    for(var p=0;p<30;p++){var hh=0;for(var i=0;i<per;i++){if(Math.random()<0.5) hh++} res.push(hh/per)}
+    var lo=Math.min.apply(null,res), hi=Math.max.apply(null,res);
+    var ext=res.filter(function(r){return r>=0.8||r<=0.2}).length;
+    var mid=res.filter(function(r){return r>=0.45&&r<=0.55}).length;
+    group={per:per,res:res,lo:lo,hi:hi,ext:ext,mid:mid};
+    log.unshift(group); if(log.length>8) log.pop();
+    drawDots(); renderLog();
+  });
+  function drawDots(){
+    var W=700,H=300,AX=258,L=40,U=32; // U = px per 5%
+    function bx(k){return L+k*U}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="30명의 앞면 비율 분포">';
+    s+='<rect class="z-ext" x="'+(bx(0)-16)+'" y="16" width="'+(bx(4)+16-(bx(0)-16))+'" height="'+(AX-16)+'" opacity=".55"/>';
+    s+='<rect class="z-ext" x="'+(bx(16)-16)+'" y="16" width="'+(bx(20)+16-(bx(16)-16))+'" height="'+(AX-16)+'" opacity=".55"/>';
+    s+='<rect class="z-mid" x="'+(bx(9)-16)+'" y="16" width="'+(U*3)+'" height="'+(AX-16)+'"/>';
+    s+='<text class="zone-r" x="'+(bx(2))+'" y="32" text-anchor="middle">20% 이하</text>';
+    s+='<text class="zone-r" x="'+(bx(18))+'" y="32" text-anchor="middle">80% 이상</text>';
+    s+='<text class="zone-l" x="'+(bx(10))+'" y="32" text-anchor="middle">45~55%</text>';
+    s+='<line class="c50" x1="'+bx(10)+'" y1="40" x2="'+bx(10)+'" y2="'+AX+'"/>';
+    s+='<line class="ax" x1="'+(L-16)+'" y1="'+AX+'" x2="'+(bx(20)+16)+'" y2="'+AX+'"/>';
+    for(var k=0;k<=20;k+=2){s+='<text class="tick" x="'+bx(k)+'" y="'+(AX+18)+'" text-anchor="middle">'+(k*5)+'%</text>'}
+    if(group){
+      var stacks={},max=1;
+      group.res.forEach(function(r){var k=Math.round(r*20);stacks[k]=(stacks[k]||0)+1;if(stacks[k]>max)max=stacks[k]});
+      var gap=Math.min(14,(AX-52)/max), rad=Math.min(5.5,gap*0.42), fill={};
+      group.res.slice().sort(function(a,b){return a-b}).forEach(function(r){
+        var k=Math.round(r*20); fill[k]=(fill[k]||0)+1;
+        var cy=AX-8-(fill[k]-1)*gap;
+        var cls=(r>=0.8||r<=0.2)?'d-ext':((r>=0.45&&r<=0.55)?'d-mid':'d-oth');
+        s+='<circle class="'+cls+'" cx="'+bx(k)+'" cy="'+cy.toFixed(1)+'" r="'+rad.toFixed(1)+'"/>';
+      });
+    } else {
+      s+='<text class="empty-t" x="'+bx(10)+'" y="'+(AX/2+20)+'" text-anchor="middle">횟수를 고르고 ‘30명 실험하기’를 눌러 보자</text>';
+    }
+    s+='</svg>';
+    $('dotBox').innerHTML=s;
+    $('groupSummary').innerHTML=group?
+      ('한 사람당 <span class="num">'+fmt(group.per)+'</span>번 · 앞면 비율 <span class="num">'+pct(group.lo)+' ~ '+pct(group.hi)+'</span> · “이 동전 이상해!”라고 착각한 사람 <b class="num">'+group.ext+'명</b> / 30명'):
+      '아직 실험 전이다.';
+  }
+  function renderLog(){
+    if(!log.length) return;
+    $('logBody').innerHTML=log.map(function(g){
+      return '<tr><td class="num">'+fmt(g.per)+'번</td><td class="num">'+pct(g.lo)+'</td><td class="num">'+pct(g.hi)+'</td><td class="num">'+g.ext+'명</td><td class="num">'+g.mid+'명</td></tr>';
+    }).join('');
+  }
+
+  /* ---------- redraw on resize / theme ---------- */
+  window.addEventListener('resize',function(){if(current===2) drawRun()});
+  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(current===2) drawRun()})}catch(e){}
+  new MutationObserver(function(){if(current===2) drawRun()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  updateUI(null,false);
+  drawDots();
+  render();
+})();
+</script>
+
+</body></html>
