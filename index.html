@@ -131,6 +131,29 @@
   </article>
 </div>
 
+<!-- QR 코드 (수업 화면에 띄워 두고 학생이 폰으로 찍기) -->
+<div class="qr" id="qr" hidden>
+  <div class="qr-backdrop" data-qr-close></div>
+  <div class="qr-panel" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <div class="sheet-head mono">
+      <span>SCAN TO OPEN</span>
+      <button class="icon-btn" data-qr-close aria-label="닫기">✕</button>
+    </div>
+    <h3 id="qrTitle"></h3>
+    <div class="qr-seg mono" id="qrSeg">
+      <button data-qr-mode="work" class="on">작품 바로 열기</button>
+      <button data-qr-mode="page">소개 페이지</button>
+    </div>
+    <div class="qr-box"><canvas id="qrCanvas" aria-label="QR 코드"></canvas></div>
+    <p class="qr-url mono" id="qrUrl"></p>
+    <div class="actions">
+      <button class="btn primary" id="qrBig">⛶ 크게 띄우기</button>
+      <button class="btn" id="qrSave">⤓ 그림으로 저장</button>
+      <button class="btn" id="qrCopy">주소 복사</button>
+    </div>
+  </div>
+</div>
+
 <!-- 바로 보기 -->
 <div class="viewer" id="viewer" hidden>
   <div class="viewer-bar">

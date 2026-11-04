@@ -258,6 +258,7 @@
       (canEmbed ? `<a class="btn primary" href="#/view/${esc(w.id)}">▶ 실행하기</a>` : `<a class="btn primary" href="${esc(href(w.url))}" target="_blank" rel="noopener">▶ 실행하기 ↗</a>`) +
       (canEmbed ? `<a class="btn" href="${esc(href(w.url))}" target="_blank" rel="noopener">새 탭 ↗</a>` : '') +
       (w.blog ? `<a class="btn" href="${esc(w.blog)}" target="_blank" rel="noopener">✎ 수업 활용 글</a>` : '') +
+      `<button class="btn" id="sQr">▦ QR 코드</button>` +
       `<button class="btn" id="sShare">주소 복사</button>`;
     $('sDesc').innerHTML = String(w.desc || w.summary || '').split(/\n+/).map(p => `<p>${esc(p)}</p>`).join('');
     $('sUses').innerHTML = (w.uses || []).length ? `<h4>// 수업 적용 프로토콜</h4><ul class="uses">${w.uses.map(u => `<li>${esc(u)}</li>`).join('')}</ul>` : '';
@@ -268,9 +269,63 @@
       try { await navigator.clipboard.writeText(url); e.target.textContent = '✓ 복사됨'; }
       catch { prompt('이 주소를 복사하세요', url); }
     };
+    $('sQr').onclick = () => openQr(w);
     $('sheet').hidden = false;
     $('sheet').querySelector('.sheet-panel').scrollTop = 0;
   }
+
+  // ── QR 코드 — 작품 주소를 QR로 (QR 그리는 코드는 처음 열 때 한 번만 받아 옴)
+  let qrLib, qrWork, qrMode = 'work';
+  const loadQr = () => qrLib ||= new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    s.onload = () => ok(window.qrcode); s.onerror = () => { qrLib = null; no(new Error('qr')); };
+    document.head.appendChild(s);
+  });
+  const qrTarget = (w, mode) => mode === 'page'
+    ? location.href.split('#')[0] + `#/w/${encodeURIComponent(w.id)}`
+    : new URL(href(w.url), location.href).href;
+  async function drawQr() {
+    const url = qrTarget(qrWork, qrMode), cv = $('qrCanvas');
+    let shown = url; try { shown = decodeURI(url); } catch {}
+    $('qrUrl').textContent = shown.replace(/^https?:\/\//, '');
+    $('qrSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.qrMode === qrMode));
+    try {
+      const qr = (await loadQr())(0, 'M');
+      qr.addData(url); qr.make();
+      const n = qr.getModuleCount(), q = 4, cell = Math.ceil(1000 / (n + q * 2)), size = cell * (n + q * 2);
+      cv.width = cv.height = size;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, size, size);
+      g.fillStyle = '#111';
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) g.fillRect((c + q) * cell, (r + q) * cell, cell, cell);
+      cv.classList.remove('err');
+    } catch { cv.width = cv.height = 0; cv.classList.add('err'); $('qrUrl').textContent = 'QR을 만들지 못했어요. 인터넷 연결을 확인해 주세요.'; }
+  }
+  function openQr(w) {
+    qrWork = w; qrMode = 'work';
+    $('qrTitle').textContent = w.title;
+    $('qrCopy').textContent = '주소 복사';
+    $('qr').hidden = false; $('qr').classList.remove('big');
+    drawQr();
+  }
+  const closeQr = () => { if (document.fullscreenElement) document.exitFullscreen(); $('qr').hidden = true; $('qr').classList.remove('big'); };
+  $('qrSeg').addEventListener('click', e => { const m = e.target.dataset.qrMode; if (m) { qrMode = m; drawQr(); } });
+  document.querySelectorAll('[data-qr-close]').forEach(el => el.addEventListener('click', closeQr));
+  $('qrBig').onclick = () => { $('qr').classList.add('big'); $('qr').requestFullscreen?.().catch(() => {}); };
+  $('qrSave').onclick = () => {
+    const a = document.createElement('a');
+    a.href = $('qrCanvas').toDataURL('image/png');
+    a.download = `QR-${qrWork.title.replace(/[\\/:*?"<>|]/g, '')}.png`;
+    a.click();
+  };
+  $('qrCopy').onclick = async e => {
+    const url = qrTarget(qrWork, qrMode);
+    try { await navigator.clipboard.writeText(url); e.target.textContent = '✓ 복사됨'; }
+    catch { prompt('이 주소를 복사하세요', url); }
+  };
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) $('qr').classList.remove('big'); });
+  addEventListener('hashchange', () => { if (!$('qr').hidden) closeQr(); });
 
   // ── 바로 보기
   function openViewer(w) {
@@ -290,7 +345,8 @@
   document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => { location.hash = '#works'; }));
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (!$('viewer').hidden) $('vBack').click(); else if (!$('sheet').hidden) location.hash = '#works';
+    if (!$('qr').hidden) closeQr();
+    else if (!$('viewer').hidden) $('vBack').click(); else if (!$('sheet').hidden) location.hash = '#works';
   });
 
   // ── 주소(#)로 화면 고르기 — 공유한 주소로 들어와도 같은 화면이 열림
