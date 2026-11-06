@@ -13,6 +13,7 @@
    {
      id: "my-work",            // 영문·숫자·하이픈. 공유 주소(#my-work)에 쓰임
      title: "작품 이름",
+     group: "수학 수업",       // 수학 수업 / 학급 운영 / 동아리 / 개인  (사이트 위쪽 분류 탭)
      kind: "게임",             // 게임 / 교재 / 앱 / 웹사이트 / 자료 …  (필터 버튼이 자동으로 생김)
      subject: "확률과 통계",
      audience: "고2~3",
@@ -52,6 +53,7 @@ window.SITE = {
 window.WORKS = [
   {
     id: "zvirus-escape",
+    group: "수학 수업",
     title: "좀비바이러스 연구실",
     kind: "게임",
     subject: "확률과 통계",
@@ -76,6 +78,7 @@ window.WORKS = [
   },
   {
     id: "prob-3d-textbook",
+    group: "수학 수업",
     title: "확률과 통계 3D 교과서",
     kind: "교재",
     subject: "확률과 통계",
@@ -100,6 +103,7 @@ window.WORKS = [
   },
   {
     id: "acorn-forest",
+    group: "수학 수업",
     title: "다람이의 도토리 숲",
     kind: "게임",
     subject: "경제 수학",
@@ -127,6 +131,7 @@ window.WORKS = [
   },
   {
     id: "habit-quest",
+    group: "학급 운영",
     title: "HABIT QUEST",
     kind: "앱",
     subject: "생활·공부 습관",
@@ -149,6 +154,7 @@ window.WORKS = [
   },
   {
     id: "book-concept-map",
+    group: "수학 수업",
     title: "책 개념 지도 · 새빨간 거짓말, 통계",
     kind: "교재",
     subject: "통계",
@@ -171,6 +177,7 @@ window.WORKS = [
   },
   {
     id: "exam-analysis",
+    group: "수학 수업",
     title: "기출 문제 시뮬레이션 · 수학Ⅰ",
     kind: "교재",
     subject: "수학Ⅰ",
@@ -193,6 +200,7 @@ window.WORKS = [
   },
   {
     id: "closet",
+    group: "동아리",
     title: "CLOSET 동아리 웹사이트",
     kind: "웹사이트",
     subject: "동아리",
@@ -212,6 +220,7 @@ window.WORKS = [
   },
   {
     id: "star-shard",
+    group: "개인",
     title: "별조각 이야기",
     kind: "게임",
     subject: "실험작",

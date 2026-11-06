@@ -165,20 +165,45 @@
     ? `<img src="${esc(coverSrc(w))}" alt="" loading="lazy">`
     : `<div class="glyph-cover" style="--c:${esc(w.color || '#343a40')}">${plotSvg(w)}<span>${esc(w.glyph || w.title[0])}</span></div>`;
 
-  // ── 필터·보기 방식
-  let kind = '전체', q = '', view = 'grid';
+  // ── 분류(수학 수업·학급 운영·동아리·개인) + 과목·주제
+  const GROUPS = [['수학 수업', 'MATH CLASS'], ['학급 운영', 'HOMEROOM'], ['동아리', 'CLUB'], ['개인', 'PERSONAL']];
+  // 분류를 안 고른 작품은 과목·종류·태그로 짐작
+  const groupOf = w => w.group || (() => {
+    const t = [w.subject, w.kind, ...(w.tags || [])].join(' ');
+    return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
+  })();
+  const groupNames = () => [...GROUPS.map(g => g[0]), ...new Set(W.map(groupOf).filter(g => !GROUPS.some(x => x[0] === g)))];
+  const enOf = g => (GROUPS.find(x => x[0] === g) || [, 'ETC'])[1];
+
+  let group = '전체', subj = '전체', q = '', view = 'grid';
   try { view = localStorage.getItem('lab-view') || 'grid'; } catch {}
   function buildChips() {
-    const kinds = ['전체', ...new Set(W.map(w => w.kind).filter(Boolean))];
-    if (!kinds.includes(kind)) kind = '전체';
-    $('chips').innerHTML = kinds.map(k => {
-      const n = k === '전체' ? W.length : W.filter(w => w.kind === k).length;
-      return `<button class="chip" role="tab" aria-selected="${k === kind}" data-k="${esc(k)}">${esc(k)}<small>${n}</small></button>`;
+    const names = groupNames();
+    if (group !== '전체' && !W.some(w => groupOf(w) === group)) group = '전체';
+    $('groups').innerHTML = ['전체', ...names].map((g, i) => {
+      const n = g === '전체' ? W.length : W.filter(w => groupOf(w) === g).length;
+      if (g !== '전체' && !n) return '';
+      return `<button class="group-tab" role="tab" aria-selected="${g === group}" data-g="${esc(g)}">` +
+        `<span class="mono">${g === '전체' ? 'ALL' : String(i).padStart(2, '0') + ' · ' + enOf(g)}</span><b>${esc(g)}<small class="mono">${n}</small></b></button>`;
+    }).join('');
+    // 고른 분류 안의 과목·주제 (분류를 골랐고, 2개 이상일 때만 보임)
+    const inG = W.filter(w => group === '전체' || groupOf(w) === group);
+    const subs = group === '전체' ? [] : [...new Set(inG.map(w => w.subject).filter(Boolean))];
+    if (!subs.includes(subj)) subj = '전체';
+    $('chips').hidden = subs.length < 2;
+    $('chips').innerHTML = ['전체', ...subs].map(s => {
+      const n = s === '전체' ? inG.length : inG.filter(w => w.subject === s).length;
+      return `<button class="chip" role="tab" aria-selected="${s === subj}" data-k="${esc(s)}">${esc(s)}<small>${n}</small></button>`;
     }).join('');
   }
+  $('groups').addEventListener('click', e => {
+    const b = e.target.closest('.group-tab'); if (!b) return;
+    group = b.dataset.g; subj = '전체';
+    buildChips(); render();
+  });
   $('chips').addEventListener('click', e => {
     const b = e.target.closest('.chip'); if (!b) return;
-    kind = b.dataset.k;
+    subj = b.dataset.k;
     $('chips').querySelectorAll('.chip').forEach(c => c.setAttribute('aria-selected', c === b));
     render();
   });
@@ -193,15 +218,26 @@
     : null;
 
   function render() {
-    const list = W.filter(w => (kind === '전체' || w.kind === kind) &&
-      (!q || [w.title, w.kind, w.subject, w.summary, ...(w.tags || [])].join(' ').toLowerCase().includes(q)));
-    const showFeatured = kind === '전체' && !q;
+    let list = W.filter(w => (group === '전체' || groupOf(w) === group) && (subj === '전체' || w.subject === subj) &&
+      (!q || [w.title, w.kind, w.subject, groupOf(w), w.summary, ...(w.tags || [])].join(' ').toLowerCase().includes(q)));
+    const showFeatured = group === '전체' && !q;
+    // '전체'일 때는 분류별로 모아서 제목을 붙여 보여 줌
+    const sections = group === '전체' && !q;
+    if (sections) { const names = groupNames(); list = names.flatMap(g => list.filter(w => groupOf(w) === g)); }
+    const head = (w, i, tag) => {
+      const g = groupOf(w);
+      if (!sections || (i && groupOf(list[i - 1]) === g)) return '';
+      const n = list.filter(x => groupOf(x) === g).length;
+      return tag === 'li'
+        ? `<li class="group-head" aria-hidden="true"><span class="mono">${enOf(g)}</span><b>${esc(g)}</b><small class="mono">${n}</small></li>`
+        : `<h3 class="group-head"><span class="mono">${enOf(g)}</span><b>${esc(g)}</b><small class="mono">${n}</small></h3>`;
+    };
     document.querySelectorAll('.view-toggle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
     $('count').textContent = `[${String(list.length).padStart(2, '0')}]`;
     $('empty').hidden = list.length > 0;
     $('grid').hidden = view !== 'grid'; $('index').hidden = view !== 'index';
     if (view === 'grid') {
-      $('grid').innerHTML = list.map((w, i) => `
+      $('grid').innerHTML = list.map((w, i) => head(w, i) + `
         <button class="card${showFeatured && w.featured ? ' featured' : ''}" data-id="${esc(w.id)}" style="transition-delay:${Math.min(i, 8) * 60}ms">
           <div class="card-top"><b>${code(w)}</b><span>${esc(w.kind || '')}${w.versions ? ` · REV.${String(w.versions).padStart(2, '0')}` : ''}</span></div>
           <div class="card-cover">${isExt(w.url) ? '<span class="ext">EXTERNAL ↗</span>' : ''}${cover(w)}</div>
@@ -214,7 +250,7 @@
         </button>`).join('');
       $('grid').querySelectorAll('.card').forEach(c => io ? io.observe(c) : c.classList.add('in'));
     } else {
-      $('index').innerHTML = list.map(w => `
+      $('index').innerHTML = list.map((w, i) => head(w, i, 'li') + `
         <li class="row" tabindex="0" data-id="${esc(w.id)}">
           <span class="r-no">${code(w)}</span>
           <span class="r-title">${esc(w.title)}</span>
@@ -249,7 +285,7 @@
   function openSheet(w) {
     $('sCode').innerHTML = `<b>${code(w)}</b> / LAB REPORT`;
     $('sCover').innerHTML = cover(w);
-    $('sKind').textContent = `// ${[w.kind, w.subject].filter(Boolean).join(' · ')}`;
+    $('sKind').textContent = `// ${[groupOf(w), w.kind, w.subject].filter(Boolean).join(' · ')}`;
     $('sTitle').textContent = w.title;
     $('sSpec').innerHTML = [['Target', w.audience], ['Revision', w.versions && `${w.versions}차`], ['Updated', w.updated], ['Source', isExt(w.url) ? '외부 링크' : '사이트 안']]
       .filter(x => x[1]).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');

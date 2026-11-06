@@ -24,7 +24,7 @@ code { font-family: var(--mono); font-size: .9em; background: var(--bg-2); borde
 .fld { display: flex; flex-direction: column; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; }
 .fld > span, .fld > legend { font-size: 14px; font-weight: 700; color: var(--ink); padding: 0; }
 .fld small { font-weight: 400; color: var(--ink-3); margin-left: 6px; font-size: 12.5px; }
-.fld input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]), .fld textarea, .src-box input[type=url] {
+.fld input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]), .fld textarea, .fld select, .src-box input[type=url] {
   width: 100%; border: 1px solid var(--line-2); background: var(--bg); color: var(--ink);
   border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 15px; outline: none;
 }

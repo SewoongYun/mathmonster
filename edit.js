@@ -12,6 +12,11 @@ await loadScript('data/sheet-config.js?v=' + v);
 const BASE = (window.WORKS || []).filter(w => w && w.id && w.title);
 const BASE_SITE = window.SITE || {};
 const baseOf = id => BASE.find(b => b.id === id);
+// 분류를 안 고른 작품은 과목·종류·태그로 짐작 (방문자 화면 app.js와 같은 규칙)
+const groupOf = w => w.group || (() => {
+  const t = [w.subject, w.kind, ...(w.tags || [])].join(' ');
+  return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
+})();
 let remote = { works: {}, site: {} }, list = [];
 
 const show = id => { for (const s of ['loading', 'setup', 'login', 'app']) $(s).hidden = s !== id; scrollTo(0, 0); };
@@ -87,6 +92,7 @@ async function reload() {
   remote = await store.loadRemote();
   list = store.mergeWorks(BASE, remote.works, true);
   renderList(); fillSite();
+  $('subjects').innerHTML = [...new Set(list.map(w => w.subject).filter(Boolean))].map(s => `<option value="${esc(s)}">`).join('');
 }
 
 const coverHtml = w => {
@@ -111,7 +117,7 @@ function renderList() {
     return `<li class="ed-item${w.hidden ? ' hidden-item' : ''}" data-id="${esc(w.id)}">
       <div class="ed-move"><button data-act="up" ${i ? '' : 'disabled'} aria-label="위로">▲</button><button data-act="down" ${i < list.length - 1 ? '' : 'disabled'} aria-label="아래로">▼</button></div>
       <div class="ed-thumb">${coverHtml(w)}</div>
-      <div class="ed-info"><b>${esc(w.title)}</b><span>${esc([w.kind, w.subject].filter(Boolean).join(' · '))}</span><span class="badges">${badges}</span></div>
+      <div class="ed-info"><b>${esc(w.title)}</b><span>${esc([groupOf(w), w.kind, w.subject].filter(Boolean).join(' · '))}</span><span class="badges">${badges}</span></div>
       <div class="ed-acts">${acts}</div>
     </li>`;
   }).join('') || '<li class="hint">아직 작품이 없어요. ＋ 새 링크 추가를 눌러 보세요.</li>';
@@ -173,7 +179,7 @@ const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g
 function autoId() {
   const s = slug(E.title.value);
   const d = new Date(), ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  let id = s.length >= 3 ? s : `lab-${ymd}`, n = 2;
+  let id = s.length >= 3 && /[a-z]/.test(s) ? s : `lab-${ymd}`, n = 2;   // 숫자만 있으면 구글 시트가 날짜로 바꿔 버림
   const base = id;
   while (list.some(w => w.id === id)) id = `${base}-${n++}`;
   return id;
@@ -198,6 +204,7 @@ function openEditor(w) {
   const x = w || { color: '#3b5bdb', updated: new Date().toISOString().slice(0, 10), embed: true };
   $('edHead').innerHTML = w ? `<b>EDIT</b> / ${esc(w.title)}` : '<b>NEW</b> / 새 링크';
   for (const k of ['title', 'kind', 'subject', 'audience', 'summary', 'desc', 'glyph', 'updated', 'blog', 'versions']) E[k].value = x[k] ?? '';
+  E.group.value = groupOf(x);
   E.color.value = /^#[0-9a-f]{6}$/i.test(x.color || '') ? x.color : '#3b5bdb';
   E.uses.value = (x.uses || []).join('\n');
   E.tags.value = (x.tags || []).join(', ');
@@ -249,7 +256,7 @@ F.addEventListener('submit', async e => {
   const src = [...E.src].find(r => r.checked)?.value;
   const id = E.id.value.trim();
   if (!E.title.value.trim()) return fail('제목을 적어 주세요.');
-  if (!cur && !/^[a-z0-9][a-z0-9-]*$/.test(id)) return fail('공유 주소 이름은 영문 소문자·숫자·하이픈(-)만 쓸 수 있어요.');
+  if (!cur && (!/^[a-z0-9][a-z0-9-]*$/.test(id) || !/[a-z]/.test(id))) return fail('공유 주소 이름은 영문 소문자·숫자·하이픈(-)만 쓰고, 영문 글자를 1개 이상 넣어 주세요.');
   if (!cur && list.some(w => w.id === id)) return fail('같은 공유 주소 이름이 이미 있어요. 다른 이름을 적어 주세요.');
 
   let url, embed;
@@ -262,7 +269,7 @@ F.addEventListener('submit', async e => {
 
   const files = lines(E.files.value).map(l => { const [name, ...r] = l.split('|'); return { name: name.trim(), url: r.join('|').trim() }; }).filter(f => f.name && f.url);
   const d = {
-    title: E.title.value.trim(), kind: E.kind.value.trim(), subject: E.subject.value.trim(), audience: E.audience.value.trim(),
+    title: E.title.value.trim(), group: E.group.value, kind: E.kind.value.trim(), subject: E.subject.value.trim(), audience: E.audience.value.trim(),
     summary: E.summary.value.trim(), desc: E.desc.value.trim(), uses: lines(E.uses.value),
     tags: E.tags.value.split(',').map(s => s.trim()).filter(Boolean),
     url, embed, cover: coverState.path, coverData: coverState.data, glyph: E.glyph.value.trim(), color: E.color.value,

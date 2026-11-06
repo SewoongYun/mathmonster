@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>돈자루 그림의 함정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: 4-step lab notebook (예상 → 그림 바꾸기 → 손계산 → 정리); same token system as 「동전 던지기 실험실」「예상오차와 표준오차」 */
+:root{
+  --paper:#F3F5F8; --sheet:#FFFFFF; --ink:#18212F; --muted:#5A6476; --rule:#DCE1E9;
+  --red:#C3243A; --red-soft:#F8DEE2;
+  --amber:#A86F06; --amber-soft:#F6E8C6;
+  --slate:#5E6E88; --slate-soft:#E2E8F1;
+  --blue:#23457C; --blue-soft:#E1E9F5;
+  --green:#2F7A4B;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Nanum Myeongjo","AppleMyungjo","Batang",serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-pen:"Nanum Pen Script","Nanum Pen",cursive;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+    --red:#FF6F80; --red-soft:#3B1D25;
+    --amber:#E8B34E; --amber-soft:#3A2F16;
+    --slate:#9AA8BF; --slate-soft:#28323F;
+    --blue:#93B3E8; --blue-soft:#1E2A3F;
+    --green:#6CC48F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --sheet:#181E28; --ink:#E6EAF1; --muted:#9AA4B6; --rule:#2B3442;
+  --red:#FF6F80; --red-soft:#3B1D25;
+  --amber:#E8B34E; --amber-soft:#3A2F16;
+  --slate:#9AA8BF; --slate-soft:#28323F;
+  --blue:#93B3E8; --blue-soft:#1E2A3F;
+  --green:#6CC48F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:20px 16px 40px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* header + stepper */
+.top{margin-bottom:12px}
+.book{font-size:13px;color:var(--muted);letter-spacing:.02em;margin:0}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.4vw,34px);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+.stepper{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.stepper button{width:100%;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-width:0}
+.stepper .sn{font-family:var(--f-num);font-weight:600;color:var(--muted)}
+.stepper .sl{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stepper button[aria-current="step"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.stepper button[aria-current="step"] .sn{color:var(--sheet)}
+@media (max-width:560px){.stepper .sl{font-size:12.5px}.stepper button{padding:7px 8px;gap:6px}}
+
+/* sheet */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding-block:26px 22px;padding-inline:clamp(18px,4vw,38px);display:flex;flex-direction:column;gap:20px}
+.sheet[hidden]{display:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin:0}
+.sheet h2{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.6vw,28px);line-height:1.3;margin:4px 0 0;text-wrap:balance}
+.lead{margin:0;max-width:64ch}
+.lead b{color:var(--red)}
+h3{font-size:15px;font-weight:700;margin:0 0 6px}
+.pen{font-family:var(--f-pen);color:var(--red);font-size:25px;line-height:1.2;margin:0;transform:rotate(-1.5deg);transform-origin:left center}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+
+/* step 1 */
+.scene{background:var(--paper);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.scene p{margin:0}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;min-width:0;background:var(--sheet)}
+.tile .k{font-size:12.5px;color:var(--muted);display:block}
+.tile .v{font-family:var(--f-num);font-weight:600;font-size:clamp(19px,3.2vw,25px);line-height:1.3;font-variant-numeric:tabular-nums}
+.tile.hl{border-color:var(--ink)}
+.tile.warn{border-color:var(--red)}
+.tile.warn .v{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:7px 16px;cursor:pointer;font-size:14.5px}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.predict{border-top:2px solid var(--ink)}
+.predict .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;padding:10px 2px;border-top:1px solid var(--rule)}
+.predict .row:first-of-type{border-top:0}
+.pin{display:flex;align-items:center;gap:6px}
+.pin input,.calc input{width:5.5em;font-family:var(--f-num);font-size:16px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:right}
+
+/* chart */
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+figcaption{font-size:14px;font-weight:700;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+figcaption .lg{font-weight:400;font-size:13px;color:var(--muted)}
+.chartbox{position:relative;border:1px solid var(--rule);border-radius:4px;padding:6px 4px 2px;background:var(--sheet)}
+.chartbox svg{display:block;width:100%;height:auto;touch-action:pan-y}
+svg text{font-family:var(--f-body)}
+svg .tick{font-family:var(--f-num);font-size:11px;fill:var(--muted)}
+svg .unit{font-size:11px;fill:var(--muted)}
+svg .endl{font-family:var(--f-num);font-size:12px;font-weight:600;fill:var(--ink)}
+.grid{stroke:var(--rule);stroke-width:1}
+.ax{stroke:var(--muted);stroke-width:1}
+.area{fill:var(--blue-soft)}
+.ln{fill:none;stroke:var(--blue);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.dt{fill:var(--blue);stroke:var(--sheet);stroke-width:2}
+.hgt{stroke:var(--red);stroke-width:2}
+svg .hgtT{font-family:var(--f-num);font-size:11.5px;font-weight:600;fill:var(--red)}
+.brk{fill:none;stroke:var(--red);stroke-width:1.6}
+.tip{position:absolute;pointer-events:none;background:var(--sheet);border:1px solid var(--ink);border-radius:4px;padding:4px 9px;font-size:12.5px;opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip .num{font-weight:600}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl-label{font-size:14px;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--sheet);padding:8px 14px;cursor:pointer;font-weight:500;font-size:14px;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+@media (max-width:480px){.seg button{padding:8px 10px;font-size:13px}}
+.sliders{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+@media (max-width:560px){.sliders{grid-template-columns:1fr}}
+.sl label{display:flex;justify-content:space-between;font-size:13.5px;color:var(--muted)}
+.sl label b{font-family:var(--f-num);color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer}
+.toggle input{accent-color:var(--red);width:16px;height:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.stats{grid-template-columns:1fr 1fr}.stats .tile:first-child{grid-column:1/-1}}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:4px;padding:8px 14px;cursor:pointer;font-weight:500;font-size:14.5px}
+.btn:hover{background:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--sheet)}
+.btn.primary:hover{opacity:.9}
+.recall{margin:0;background:var(--paper);border-radius:4px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.recall b{color:var(--red)}
+
+/* step 3 */
+.formula{margin:0;border-left:3px solid var(--red);padding:6px 0 6px 16px;font-family:var(--f-display);font-weight:700;font-size:clamp(16px,2.6vw,19px);line-height:1.6}
+.formula small{display:block;font-family:var(--f-body);font-weight:400;font-size:13px;color:var(--muted)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--ink)}
+td.num{font-weight:500}
+td.ex{background:var(--paper)}
+.calc input{width:4.5em;font-size:15px;padding:4px 6px}
+.mark{display:inline-block;min-width:1.4em;font-weight:700;text-align:center}
+.mark.ok{color:var(--green)} .mark.no{color:var(--red)}
+
+/* step 4 */
+.law{border:2px solid var(--ink);border-radius:4px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.law .t{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.law p{margin:0}
+.law .main{font-family:var(--f-display);font-weight:800;font-size:clamp(18px,2.8vw,21px);line-height:1.5}
+.law b{color:var(--red)}
+.qs{border-top:2px solid var(--ink)}
+.q{display:grid;grid-template-columns:2.4em 1fr;gap:4px 10px;padding:12px 0;border-top:1px solid var(--rule)}
+.q:first-child{border-top:0}
+.q .qn{font-family:var(--f-num);font-weight:600;color:var(--red)}
+.q p{margin:0;min-width:0}
+.q details{grid-column:2;font-size:14.5px}
+summary{cursor:pointer;color:var(--blue);font-weight:500;font-size:13.5px;width:max-content}
+details[open] summary{margin-bottom:4px}
+.ans{background:var(--paper);padding:10px 12px;border-radius:4px}
+.mine{margin:0;font-size:14.5px;color:var(--muted)}
+.mine b{color:var(--ink)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.navbtn{border:1px solid var(--rule);background:none;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500}
+.navbtn:hover{border-color:var(--ink)}
+.spacer{flex:1}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+.calc input{width:3.3em;font-size:14px}
+#s3 th,#s3 td{padding:8px 3px}#s3 td:last-child,#s3 th:last-child{padding-left:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="book">『새빨간 거짓말, 통계』 120~121쪽 · 그림 도표</p>
+    <h1>돈자루 그림의 함정</h1>
+  </header>
+
+  <ol class="stepper" aria-label="실험 단계">
+    <li><button id="st1" data-go="1"><span class="sn">1</span><span class="sl">예상</span></button></li>
+    <li><button id="st2" data-go="2"><span class="sn">2</span><span class="sl">그림</span></button></li>
+    <li><button id="st3" data-go="3"><span class="sn">3</span><span class="sl">손계산</span></button></li>
+    <li><button id="st4" data-go="4"><span class="sn">4</span><span class="sl">정리</span></button></li>
+  </ol>
+
+  <!-- STEP 1 -->
+  <section class="sheet" id="s1" aria-labelledby="h1s">
+    <div>
+      <p class="eyebrow">STEP 1 / 4 · 예상하기</p>
+      <h2 id="h1s">2배 큰 돈자루, 정말 2배로 보일까?</h2>
+    </div>
+
+    <div class="facts">
+      <div class="tile"><span class="k">로툰디아 주급</span><span class="v">30달러</span></div>
+      <div class="tile"><span class="k">미국 주급</span><span class="v">60달러</span></div>
+      <div class="tile hl"><span class="k">실제 차이</span><span class="v">2배</span></div>
+    </div>
+
+    <figure>
+      <div class="chartbox"><svg id="pre" viewBox="0 0 640 300" role="img" aria-label="높이가 2배인 두 돈자루 그림"></svg></div>
+    </figure>
+
+    <div class="scene">
+      <p>책 속 그림은 30달러를 작은 돈자루로, 60달러를 <b>높이가 2배인</b> 돈자루로 그렸다. 높이는 정확히 2배다. 그런데 모양을 그대로 키웠으니 폭도 2배가 되었다.</p>
+      <p class="pen">“숫자는 맞는데… 왜 저쪽이 훨씬 부자처럼 보이지?”</p>
+    </div>
+
+    <div>
+      <h3>큰 자루를 처음 봤을 때, 작은 자루의 몇 배쯤으로 느껴지나?</h3>
+      <div class="chips" id="belief" role="group" aria-label="내 느낌">
+        <button class="chip" data-v="2배쯤" aria-pressed="false">2배쯤</button>
+        <button class="chip" data-v="3~4배쯤" aria-pressed="false">3~4배쯤</button>
+        <button class="chip" data-v="그보다 훨씬 더" aria-pressed="false">그보다 훨씬 더</button>
+      </div>
+    </div>
+
+    <div>
+      <h3>감으로 적어 보자</h3>
+      <div class="predict">
+        <div class="row"><label for="pArea">큰 자루가 종이에서 차지하는 넓이는 몇 배?</label><span class="pin"><input id="pArea" type="number" inputmode="decimal" placeholder="?"> 배</span></div>
+        <div class="row"><label for="pVol">진짜 자루라면, 돈이 몇 배 더 들어갈까?</label><span class="pin"><input id="pVol" type="number" inputmode="decimal" placeholder="?"> 배</span></div>
+      </div>
+      <p class="hint">계산하지 말고 느낌으로. STEP 2에서 그림과 비교한다.</p>
+    </div>
+
+    <div class="nav"><span class="spacer"></span><button class="navbtn" data-go="2">STEP 2 · 그림 바꾸기 →</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="sheet" id="s2" aria-labelledby="h2s" hidden>
+    <div>
+      <p class="eyebrow">STEP 2 / 4 · 그림 바꾸기</p>
+      <h2 id="h2s">같은 숫자, 네 가지 그림</h2>
+    </div>
+    <p class="lead">미국 목수 주급을 움직이며 네 가지 방법으로 그려 보자. 실제 차이와 <b>눈에 보이는 차이</b>가 같은 그림은 어느 것일까?</p>
+
+    <div class="controls">
+      <div class="seg" role="group" aria-label="그리는 방법" id="modes">
+        <button data-m="bar" aria-pressed="false">A 막대</button>
+        <button data-m="tall" aria-pressed="false">B 키만</button>
+        <button data-m="sim" aria-pressed="true">C 통째로</button>
+        <button data-m="icon" aria-pressed="false">D 개수</button>
+      </div>
+    </div>
+
+    <figure>
+      <figcaption id="modeCap">C · 통째로 키우기 <span class="lg">책의 그림 방식 — 높이와 폭을 함께 키움</span></figcaption>
+      <div class="chartbox"><svg id="main" viewBox="0 0 640 320" role="img" aria-label="두 나라 목수 주급 그림 비교"></svg></div>
+    </figure>
+
+    <div class="sliders">
+      <div class="sl"><label for="usw">미국 목수 주급 <b id="uswV">60달러</b></label><input type="range" id="usw" min="30" max="120" step="3" value="60"></div>
+      <div class="sl"><label>실제 차이 (미국 ÷ 로툰디아)</label><div class="num" style="font-size:22px;font-weight:600" id="kV">2.0배</div></div>
+    </div>
+
+    <div class="stats">
+      <div class="tile"><span class="k">높이 비</span><span class="v" id="tH">2.0배</span></div>
+      <div class="tile" id="tABox"><span class="k">넓이 비 (보이는 잉크)</span><span class="v" id="tA">4.0배</span></div>
+      <div class="tile" id="tVBox"><span class="k">부피 비 (입체로 느낄 때)</span><span class="v" id="tV">8.0배</span></div>
+    </div>
+    <p class="note">눈은 높이보다 그림이 차지하는 넓이(와 덩어리감)를 먼저 느낀다. 넓이 비가 실제 차이와 같으면 정직한 그림이다.</p>
+
+    <div class="recall">
+      <span id="recallTxt">STEP 1 내 예상: <b>아직 적지 않음</b></span>
+      <button class="btn" id="to60">책 그림으로 돌아가기 (C · 60달러)</button>
+    </div>
+
+    <p class="pen">높이만 정직하면 끝? 그림은 넓이로, 덩어리로 말한다!</p>
+
+    <div class="nav"><button class="navbtn" data-go="1">← STEP 1</button><button class="navbtn" data-go="3">STEP 3 · 손계산 →</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="sheet" id="s3" aria-labelledby="h3s" hidden>
+    <div>
+      <p class="eyebrow">STEP 3 / 4 · 손계산</p>
+      <h2 id="h3s">닮음비가 k이면, 넓이와 부피는?</h2>
+    </div>
+    <p class="lead">모양은 그대로 두고 크기만 <b>k배</b> 키우면 가로·세로·깊이가 모두 k배가 된다.</p>
+    <p class="formula">길이 비 k → 넓이 비 k² → 부피 비 k³<small>예: k = 2 → 넓이 4배, 부피 8배 → 30달러 자루가 담는 양의 8배 = 240달러어치처럼 보인다</small></p>
+
+    <div>
+      <h3>표를 채워 보자 <span style="font-weight:400;color:var(--muted);font-size:13px">작은 자루 = 30달러 · 느낌($) = 부피 비만큼 담긴 돈 · 소수 둘째 자리까지</span></h3>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>주급($)</th><th>k</th><th>넓이 비</th><th>부피 비</th><th>느낌($)</th><th></th></tr></thead>
+          <tbody class="calc">
+            <tr><td class="num ex">60</td><td class="num ex">2</td><td class="num ex">4</td><td class="num ex">8</td><td class="num ex">240</td><td class="ex"><span class="mark">예</span></td></tr>
+            <tr data-w="90"><td class="num">90</td><td><input type="number" inputmode="decimal" step="0.01" data-k="k"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="a"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="v"></td><td><input type="number" inputmode="decimal" step="0.1" data-k="m"></td><td><span class="mark"></span></td></tr>
+            <tr data-w="45"><td class="num">45</td><td><input type="number" inputmode="decimal" step="0.01" data-k="k"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="a"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="v"></td><td><input type="number" inputmode="decimal" step="0.1" data-k="m"></td><td><span class="mark"></span></td></tr>
+            <tr data-w="33"><td class="num">33</td><td><input type="number" inputmode="decimal" step="0.01" data-k="k"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="a"></td><td><input type="number" inputmode="decimal" step="0.01" data-k="v"></td><td><input type="number" inputmode="decimal" step="0.1" data-k="m"></td><td><span class="mark"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="controls"><button class="btn primary" id="grade">채점하기</button><span class="hint" id="gradeMsg">33달러는 10% 차이다. 작은 차이도 그림으로는 얼마나 커질까?</span></div>
+
+    <div class="qs">
+      <div class="q">
+        <span class="qn">더</span>
+        <p>통째로 키우는 그림을 꼭 쓰고 싶다. <b>넓이</b>가 정확히 2배가 되려면 높이를 몇 배로 그려야 할까?</p>
+        <details><summary>풀이 보기</summary>
+          <div class="ans">k² = 2 → k = √2 ≈ <b>1.41배</b>. 60달러 자루를 높이 1.41배로만 그려야 넓이가 2배가 된다. STEP 2에서 B·C 방식을 비교해 보자.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">더</span>
+        <p>입체 그림(부피)으로 2배를 정직하게 보여 주려면 높이를 몇 배로?</p>
+        <details><summary>풀이 보기</summary>
+          <div class="ans">k³ = 2 → k = ∛2 ≈ <b>1.26배</b>. 같은 2배라도 1차원·2차원·3차원 중 무엇으로 읽히느냐에 따라 그려야 할 크기가 달라진다.</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="nav"><button class="navbtn" data-go="2">← STEP 2</button><button class="navbtn" data-go="4">STEP 4 · 정리 →</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="sheet" id="s4" aria-labelledby="h4s" hidden>
+    <div>
+      <p class="eyebrow">STEP 4 / 4 · 정리하기</p>
+      <h2 id="h4s">1차원 숫자를 2·3차원 그림으로 그리면</h2>
+    </div>
+
+    <div class="law">
+      <span class="t">오늘의 정리</span>
+      <p class="main">닮은 그림을 k배로 키우면 넓이는 <b>k²배</b>, 부피는 <b>k³배</b>로 느껴진다.</p>
+      <p>2배 차이를 돈자루로 그리면 넓이로는 4배, 덩어리로는 8배처럼 보인다. 높이를 정확히 그려도 <b>폭과 두께가 함께 커지면</b> 과장이 된다.</p>
+    </div>
+
+    <p class="recall" id="recall2">STEP 1에서 고른 내 느낌: <b>아직 고르지 않음</b></p>
+
+    <div class="qs">
+      <div class="q">
+        <span class="qn">Q1</span>
+        <p>앞에서 본 ‘세로축 자르기’와 오늘의 ‘돈자루 그림’은 어떤 점이 같고 어떤 점이 다를까?</p>
+        <details><summary>생각할 거리</summary>
+          <div class="ans">같은 점: 숫자는 하나도 틀리지 않았는데 <b>그림이 주는 인상</b>만 바뀐다. 다른 점: 세로축 자르기는 ‘기준선’을 옮기고, 돈자루는 ‘차원’을 늘린다(1차원 → 2·3차원).</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q2</span>
+        <p>같은 두 숫자를 정직하게 그림으로 보여 주는 방법은?</p>
+        <details><summary>답 보기</summary>
+          <div class="ans">① 폭이 같은 막대그래프(A) ② 같은 크기의 그림을 개수로 반복(D, ‘그림 단위 그래프’) ③ 꼭 크기를 키워야 한다면 넓이가 실제 비가 되도록 √k배로 그리기.</div>
+        </details>
+      </div>
+      <div class="q">
+        <span class="qn">Q3</span>
+        <p>뉴스·광고에서 동전 더미, 사람 실루엣, 건물 아이콘 크기로 숫자를 비교한 그림을 찾아보자. 높이·넓이·부피 중 무엇으로 비교했을까?</p>
+        <details><summary>생각할 거리</summary>
+          <div class="ans">그림 옆 숫자로 실제 비를 구하고, 그림의 높이 비를 자로 재 보자. 높이 비가 실제 비와 같은데 모양이 통째로 커졌다면, 넓이로는 그 제곱만큼 과장된 것이다.</div>
+        </details>
+      </div>
+    </div>
+
+    <p class="mine"><b>나만의 질문 1개</b> · 인포그래픽에서 원(동그라미) 크기로 숫자를 비교할 때, 지름과 넓이 중 무엇을 비례하게 그려야 할까?</p>
+
+    <div class="nav"><button class="navbtn" data-go="3">← STEP 3</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var NS='http://www.w3.org/2000/svg';
+  var belief=null, current=1, mode='sim', usw=60;
+
+  /* ---------- steps ---------- */
+  function render(){
+    var m=/^#s([1-4])$/.exec(location.hash); current=m?+m[1]:1;
+    for(var i=1;i<=4;i++){
+      $('s'+i).hidden=(i!==current);
+      $('st'+i).setAttribute('aria-current',i===current?'step':'false');
+    }
+    if(current===1) drawPre();
+    if(current===2){drawMain();fillRecall();}
+    if(current===4) $('recall2').innerHTML='STEP 1에서 고른 내 느낌: <b>'+(belief||'아직 고르지 않음')+'</b> · 지금은 몇 배로 보이는지, 왜 그런지 적어 보자.';
+  }
+  function go(i){ if(location.hash!=='#s'+i){location.hash='s'+i}else{render()} window.scrollTo(0,0); }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(+b.getAttribute('data-go'))})});
+  window.addEventListener('hashchange',render);
+
+  document.querySelectorAll('#belief .chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      belief=b.getAttribute('data-v');
+      document.querySelectorAll('#belief .chip').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    });
+  });
+  function fillRecall(){
+    var a=$('pArea').value.trim(), v=$('pVol').value.trim();
+    $('recallTxt').innerHTML='STEP 1 내 예상 (60달러): 넓이 <b>'+(a===''?'?':a+'배')+'</b> · 부피 <b>'+(v===''?'?':v+'배')+'</b>';
+  }
+
+  /* ---------- drawing helpers ---------- */
+  function el(svg,t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e}
+  function txt(svg,a,s){var e=el(svg,'text',a);e.textContent=s;return e}
+  var BAG_W=100,BAG_H=120;
+  function bag(svg,x,base,w,h,big){
+    var g=el(svg,'g',{transform:'translate('+x.toFixed(1)+','+(base-h).toFixed(1)+') scale('+(w/BAG_W).toFixed(4)+','+(h/BAG_H).toFixed(4)+')'});
+    var fill=big?'var(--amber-soft)':'var(--slate-soft)', stroke='var(--ink)';
+    var common={fill:fill,stroke:stroke,'stroke-width':1.8,'vector-effect':'non-scaling-stroke','stroke-linejoin':'round'};
+    function add(t,a){var o={};for(var k in common)o[k]=common[k];for(var j in a)o[j]=a[j];return el(g,t,o)}
+    add('path',{d:'M36,32 C28,22 20,10 31,5 C40,12 43,1 50,8 C57,1 60,12 69,5 C80,10 72,22 64,32 Z'});
+    add('path',{d:'M36,38 C10,52 2,90 14,110 C26,122 74,122 86,110 C98,90 90,52 64,38 Z'});
+    add('rect',{x:33,y:29,width:34,height:9,rx:3,fill:'var(--sheet)'});
+    var d=el(g,'text',{x:50,y:96,'text-anchor':'middle','font-size':34,'font-weight':800,fill:'var(--ink)','font-family':'var(--f-display)'});
+    d.textContent='$';
+    return g;
+  }
+  function size(svg,hDesk,hMob){
+    var w=Math.max(300,Math.round(svg.parentElement.clientWidth-8)||640);
+    var h=w<520?hMob:hDesk;
+    svg.setAttribute('viewBox','0 0 '+w+' '+h);
+    return {W:w,H:h};
+  }
+  function labels(svg,cx,base,name,val){
+    txt(svg,{x:cx,y:base+20,'text-anchor':'middle','font-size':13,'font-weight':700,fill:'var(--ink)'},name);
+    txt(svg,{x:cx,y:base+37,'text-anchor':'middle','font-size':12.5,'font-family':'var(--f-num)',fill:'var(--muted)'},val);
+  }
+
+  /* ---------- STEP 1 preview: 책 방식 (k=2) ---------- */
+  function drawPre(){
+    var svg=$('pre'); svg.innerHTML='';
+    var s=size(svg,300,250), base=s.H-46, avail=base-14;
+    var unit=avail/2, w0=unit*BAG_W/BAG_H;
+    var c1=s.W*0.3, c2=s.W*0.66;
+    el(svg,'line',{x1:12,x2:s.W-12,y1:base,y2:base,stroke:'var(--muted)'});
+    bag(svg,c1-w0/2,base,w0,unit,false);
+    bag(svg,c2-w0,base,w0*2,unit*2,true);
+    // height marker
+    var mx=c2+w0+12;
+    el(svg,'line',{x1:mx,x2:mx,y1:base,y2:base-unit*2,stroke:'var(--red)','stroke-width':2});
+    el(svg,'line',{x1:mx-4,x2:mx+4,y1:base-unit*2,y2:base-unit*2,stroke:'var(--red)','stroke-width':2});
+    var lx=c1+w0/2+10;
+    el(svg,'line',{x1:lx,x2:lx,y1:base,y2:base-unit,stroke:'var(--red)','stroke-width':2});
+    el(svg,'line',{x1:lx-4,x2:lx+4,y1:base-unit,y2:base-unit,stroke:'var(--red)','stroke-width':2});
+    txt(svg,{x:lx+6,y:base-unit/2+4,'font-size':12,'font-family':'var(--f-num)','font-weight':600,fill:'var(--red)'},'1');
+    txt(svg,{x:Math.min(mx+6,s.W-14),y:base-unit+4,'font-size':12,'font-family':'var(--f-num)','font-weight':600,fill:'var(--red)'},'2');
+    labels(svg,c1,base,'로툰디아','30달러');
+    labels(svg,c2,base,'미국','60달러');
+  }
+
+  /* ---------- STEP 2 main ---------- */
+  var CAP={
+    bar:['A · 막대','폭은 같고 높이만 비례 — 정직한 기본형'],
+    tall:['B · 키만 늘리기','자루 폭은 그대로, 높이만 k배 — 넓이도 k배'],
+    sim:['C · 통째로 키우기','책의 그림 방식 — 높이와 폭을 함께 키움'],
+    icon:['D · 자루 개수','같은 크기 자루를 개수로 — 그림 단위 그래프']
+  };
+  function drawMain(){
+    var svg=$('main'); svg.innerHTML='';
+    var s=size(svg,330,280), base=s.H-46, avail=base-14, k=usw/30;
+    var c1=s.W*0.27, c2=s.W*0.66;
+    el(svg,'line',{x1:12,x2:s.W-12,y1:base,y2:base,stroke:'var(--muted)'});
+    var unit=avail/Math.max(k,2), w0=unit*BAG_W/BAG_H;
+    if(mode==='bar'){
+      var bw=Math.min(70,s.W*0.16);
+      el(svg,'rect',{x:c1-bw/2,y:base-unit,width:bw,height:unit,fill:'var(--slate-soft)',stroke:'var(--ink)','stroke-width':1.5});
+      el(svg,'rect',{x:c2-bw/2,y:base-unit*k,width:bw,height:unit*k,fill:'var(--amber-soft)',stroke:'var(--ink)','stroke-width':1.5});
+      labels(svg,c1,base,'로툰디아','30달러'); labels(svg,c2,base,'미국',usw+'달러');
+    } else if(mode==='tall'){
+      bag(svg,c1-w0/2,base,w0,unit,false);
+      bag(svg,c2-w0/2,base,w0,unit*k,true);
+      labels(svg,c1,base,'로툰디아','30달러'); labels(svg,c2,base,'미국',usw+'달러');
+    } else if(mode==='sim'){
+      bag(svg,c1-w0/2,base,w0,unit,false);
+      bag(svg,c2-w0*k/2,base,w0*k,unit*k,true);
+      labels(svg,c1,base,'로툰디아','30달러'); labels(svg,c2,base,'미국',usw+'달러');
+    } else {
+      var n=Math.ceil(k-1e-9), gap=6, cols=Math.min(n,2), rows=Math.ceil(n/2);
+      var ih=Math.min(rows>1?(avail-8)/2:avail*0.7,(s.W-44)/((1+cols)*(BAG_W/BAG_H)+0.8)), iw=ih*BAG_W/BAG_H;
+      var x1=Math.max(16,s.W*0.12), x2=x1+iw+Math.max(28,iw*0.7);
+      bag(svg,x1,base,iw,ih,false);
+      for(var i=0;i<n;i++){
+        var frac=Math.min(1,k-i), gx=x2+(i%2)*(iw+gap), gb=base-Math.floor(i/2)*(ih+8);
+        var cid='clip'+i;
+        var cp=el(svg,'clipPath',{id:cid}); el(cp,'rect',{x:gx-2,y:0,width:iw*frac+(frac<1?2:4),height:s.H});
+        var g=el(svg,'g',{'clip-path':'url(#'+cid+')'});
+        bag(g,gx,gb,iw,ih,true);
+        if(frac<1){el(svg,'line',{x1:gx+iw*frac,x2:gx+iw*frac,y1:gb-ih,y2:gb,stroke:'var(--muted)','stroke-dasharray':'3 3'})}
+      }
+      labels(svg,x1+iw/2,base,'로툰디아','30달러');
+      labels(svg,x2+(cols*(iw+gap)-gap)/2,base,'미국',usw+'달러');
+      txt(svg,{x:s.W-12,y:20,'text-anchor':'end','font-size':12,fill:'var(--muted)'},'자루 1개 = 30달러');
+    }
+    var area=(mode==='sim')?k*k:k, vol=(mode==='sim')?k*k*k:null;
+    function f(x){return x<10?x.toFixed(1):Math.round(x).toString()}
+    $('uswV').textContent=usw+'달러'; $('kV').textContent=f(k)+'배';
+    $('tH').textContent=(mode==='icon'?'—':f(k)+'배');
+    $('tA').textContent=f(area)+'배';
+    $('tV').textContent=vol===null?'—':f(vol)+'배';
+    $('tABox').classList.toggle('warn',area/k>=1.3);
+    $('tVBox').classList.toggle('warn',vol!==null&&vol/k>=1.3);
+    $('modeCap').innerHTML=CAP[mode][0]+' <span class="lg">'+CAP[mode][1]+'</span>';
+  }
+  document.querySelectorAll('[data-m]').forEach(function(b){b.addEventListener('click',function(){
+    mode=b.getAttribute('data-m');
+    document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    drawMain();
+  })});
+  $('usw').addEventListener('input',function(){usw=+this.value;drawMain()});
+  $('to60').addEventListener('click',function(){
+    usw=60;$('usw').value=60;mode='sim';
+    document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-m')==='sim'?'true':'false')});
+    drawMain();
+  });
+  window.addEventListener('resize',function(){if(current===1)drawPre();if(current===2)drawMain()});
+
+  /* ---------- STEP 3 grading ---------- */
+  $('grade').addEventListener('click',function(){
+    var ok=0,total=0;
+    document.querySelectorAll('tr[data-w]').forEach(function(tr){
+      var k=+tr.getAttribute('data-w')/30, want={k:k,a:k*k,v:k*k*k,m:30*k*k*k}, tol={k:.011,a:.011,v:.011,m:.11};
+      var good=true;
+      ['k','a','v','m'].forEach(function(key){
+        var s=tr.querySelector('[data-k="'+key+'"]').value.trim();
+        if(s===''||Math.abs(+s-want[key])>tol[key]) good=false;
+      });
+      var mk=tr.querySelector('.mark'); mk.textContent=good?'✓':'✗'; mk.className='mark '+(good?'ok':'no');
+      total++; if(good) ok++;
+    });
+    $('gradeMsg').textContent=ok===total?'모두 맞았다! 33달러(10% 차이)도 부피로는 약 33% 더 커 보인다.':ok+' / '+total+' 맞음 · k = 미국 주급 ÷ 30부터 다시 확인해 보자.';
+  });
+
+  render();
+})();
+
+</script>
+</body>
+</html>

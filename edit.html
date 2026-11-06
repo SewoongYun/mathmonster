@@ -160,13 +160,17 @@
       </fieldset>
 
       <div class="row2">
+        <label class="fld"><span>분류 * <small>사이트 위쪽 탭</small></span>
+          <select name="group">
+            <option>수학 수업</option><option>학급 운영</option><option>동아리</option><option>개인</option>
+          </select></label>
         <label class="fld"><span>종류</span><input name="kind" list="kinds" placeholder="게임 / 교재 / 앱 / 자료"></label>
-        <label class="fld"><span>과목·주제</span><input name="subject" placeholder="확률과 통계"></label>
       </div>
       <div class="row2">
+        <label class="fld"><span>과목·주제 <small>분류 안에서 한 번 더 나뉨</small></span><input name="subject" list="subjects" placeholder="확률과 통계"></label>
         <label class="fld"><span>대상</span><input name="audience" placeholder="고2~3"></label>
-        <label class="fld"><span>공유 주소 이름 <small>영문·숫자·하이픈</small></span><input name="id" class="mono" pattern="[a-z0-9-]+"></label>
       </div>
+      <label class="fld"><span>공유 주소 이름 <small>영문·숫자·하이픈, 영문 글자 1개 이상</small></span><input name="id" class="mono" pattern="[a-z0-9-]+"></label>
       <label class="fld"><span>한 줄 소개 *</span><input name="summary" required maxlength="140"></label>
       <label class="fld"><span>자세한 설명 <small>빈 줄로 문단 나누기</small></span><textarea name="desc" rows="5"></textarea></label>
       <label class="fld"><span>수업 활용 아이디어 <small>한 줄에 하나</small></span><textarea name="uses" rows="3"></textarea></label>
@@ -204,6 +208,7 @@
   </form>
 </div>
 
+<datalist id="subjects"></datalist>
 <datalist id="kinds"><option>게임</option><option>교재</option><option>앱</option><option>웹사이트</option><option>자료</option></datalist>
 <div class="toast mono" id="toast" hidden></div>
 
