@@ -5,11 +5,17 @@
   let S = { ...(window.SITE || {}) };
   const live = w => !!w.url;                          // 링크가 비어 있는 작품은 숨김
   let W = BASE.filter(live);
+  // 마지막으로 받은 목록을 이 브라우저에 기억 — 다음에 열 때 예전 목록이 잠깐 보였다가 바뀌지 않게
+  const CACHE = 'lab-cache', API = (window.SHEET_API || '').trim();
+  try {
+    const c = JSON.parse(localStorage.getItem(CACHE));
+    if (c && c.api === API && Array.isArray(c.works)) { W = c.works; S = { ...S, ...c.site }; }
+  } catch {}
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const isExt = u => /^https?:\/\//i.test(u || '');
   const href = u => isExt(u) ? u : encodeURI(u || '');
-  const code = w => 'EXP-' + String(W.indexOf(w) + 1).padStart(2, '0');
+  const code = w => String(W.indexOf(w) + 1).padStart(2, '0');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ── 밝게/어둡게
@@ -35,16 +41,16 @@
     const html = lines.map((l, i) => `<span class="line"><span>${esc(l)}${i === lines.length - 1 ? '<sup>®</sup>' : ''}</span></span>`).join('');
     if (h1.innerHTML !== html) h1.innerHTML = html;
     h1.setAttribute('aria-label', lines.join(' '));
-    $('heroKicker').textContent = `// ${[S.role, S.owner].filter(Boolean).join(' · ')} — EST. 2026`;
+    $('heroKicker').textContent = `// ${[S.role, S.owner].filter(Boolean).join(' · ')} — 2026년부터`;
     $('heroKo').innerHTML = esc(S.subtitle || '').replace(/(실험실|LAB)/, '<em>$1</em>');
     $('heroIntro').textContent = S.intro || '';
     const today = new Date();
-    $('statusText').textContent = `LAB OPEN · ${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} · ${W.length} EXP`;
+    $('statusText').textContent = `실험실 열림 · ${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} · 작품 ${W.length}개`;
     $('footName').textContent = `© ${today.getFullYear()} ${S.owner || ''} · ${S.title || 'MATH LAB'}`;
     const foot = [];
     for (const el of [$('navBlog'), $('heroBlog')]) { el.hidden = !S.blog; if (S.blog) el.href = S.blog; }
     $('aboutBlog').innerHTML = S.blog ? `<a href="${esc(S.blog)}" target="_blank" rel="noopener">블로그</a>` : '블로그';
-    if (S.blog) foot.push(`<a href="${esc(S.blog)}" target="_blank" rel="noopener">BLOG ↗</a>`);
+    if (S.blog) foot.push(`<a href="${esc(S.blog)}" target="_blank" rel="noopener">블로그 ↗</a>`);
     if (S.email) foot.push(`<a href="mailto:${esc(S.email)}">${esc(S.email)}</a>`);
     $('footLinks').innerHTML = foot.join('');
   }
@@ -54,10 +60,10 @@
     const versions = W.reduce((a, w) => a + (+w.versions || 0), 0);
     const subjects = new Set(W.map(w => w.subject).filter(Boolean));
     $('stats').innerHTML = [
-      ['Experiments', W.length, 'EA'],
-      ['Iterations', versions, 'REV'],
-      ['Subjects', subjects.size, 'FIELD'],
-      ['Install', 0, 'NEED']
+      ['만든 작품', W.length, '개'],
+      ['고쳐 만든 횟수', versions, '번'],
+      ['과목·주제', subjects.size, '가지'],
+      ['설치할 프로그램', 0, '개']
     ].map(([t, n, u]) => `<div><dd data-n="${n}">${animate ? '00' : String(n).padStart(2, '0')}<small>${u}</small></dd><dt>${t}</dt></div>`).join('');
     if (!animate) return;
     document.querySelectorAll('.stats dd').forEach(dd => {
@@ -163,7 +169,7 @@
   const coverSrc = w => w.coverData || (w.cover ? href(w.cover) : '');
   const cover = w => coverSrc(w)
     ? `<img src="${esc(coverSrc(w))}" alt="" loading="lazy">`
-    : `<div class="glyph-cover" style="--c:${esc(w.color || '#343a40')}">${plotSvg(w)}<span>${esc(w.glyph || w.title[0])}</span></div>`;
+    : `<div class="glyph-cover" style="--c:${esc(w.color || '#343a40')}">${plotSvg(w)}<div class="gc-text"><span${w.glyph ? '' : ' class="auto"'}>${esc(w.glyph || w.title[0])}</span><strong>${esc(w.title)}</strong></div></div>`;
 
   // ── 분류(수학 수업·학급 운영·동아리·개인) + 과목·주제
   const GROUPS = [['수학 수업', 'MATH CLASS'], ['학급 운영', 'HOMEROOM'], ['동아리', 'CLUB'], ['개인', 'PERSONAL']];
@@ -173,18 +179,17 @@
     return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
   })();
   const groupNames = () => [...GROUPS.map(g => g[0]), ...new Set(W.map(groupOf).filter(g => !GROUPS.some(x => x[0] === g)))];
-  const enOf = g => (GROUPS.find(x => x[0] === g) || [, 'ETC'])[1];
 
   let group = '전체', subj = '전체', q = '', view = 'grid';
   try { view = localStorage.getItem('lab-view') || 'grid'; } catch {}
   function buildChips() {
     const names = groupNames();
     if (group !== '전체' && !W.some(w => groupOf(w) === group)) group = '전체';
-    $('groups').innerHTML = ['전체', ...names].map((g, i) => {
+    $('groups').innerHTML = ['전체', ...names].map(g => {
       const n = g === '전체' ? W.length : W.filter(w => groupOf(w) === g).length;
       if (g !== '전체' && !n) return '';
       return `<button class="group-tab" role="tab" aria-selected="${g === group}" data-g="${esc(g)}">` +
-        `<span class="mono">${g === '전체' ? 'ALL' : String(i).padStart(2, '0') + ' · ' + enOf(g)}</span><b>${esc(g)}<small class="mono">${n}</small></b></button>`;
+        `<b>${esc(g)}<small class="mono">${n}</small></b></button>`;
     }).join('');
     // 고른 분류 안의 과목·주제 (분류를 골랐고, 2개 이상일 때만 보임)
     const inG = W.filter(w => group === '전체' || groupOf(w) === group);
@@ -229,8 +234,8 @@
       if (!sections || (i && groupOf(list[i - 1]) === g)) return '';
       const n = list.filter(x => groupOf(x) === g).length;
       return tag === 'li'
-        ? `<li class="group-head" aria-hidden="true"><span class="mono">${enOf(g)}</span><b>${esc(g)}</b><small class="mono">${n}</small></li>`
-        : `<h3 class="group-head"><span class="mono">${enOf(g)}</span><b>${esc(g)}</b><small class="mono">${n}</small></h3>`;
+        ? `<li class="group-head" aria-hidden="true"><b>${esc(g)}</b><small class="mono">${n}</small></li>`
+        : `<h3 class="group-head"><b>${esc(g)}</b><small class="mono">${n}</small></h3>`;
     };
     document.querySelectorAll('.view-toggle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
     $('count').textContent = `[${String(list.length).padStart(2, '0')}]`;
@@ -239,13 +244,13 @@
     if (view === 'grid') {
       $('grid').innerHTML = list.map((w, i) => head(w, i) + `
         <button class="card${showFeatured && w.featured ? ' featured' : ''}" data-id="${esc(w.id)}" style="transition-delay:${Math.min(i, 8) * 60}ms">
-          <div class="card-top"><b>${code(w)}</b><span>${esc(w.kind || '')}${w.versions ? ` · REV.${String(w.versions).padStart(2, '0')}` : ''}</span></div>
-          <div class="card-cover">${isExt(w.url) ? '<span class="ext">EXTERNAL ↗</span>' : ''}${cover(w)}</div>
+          <div class="card-top"><b>${esc(w.kind || '')}</b><span>${w.versions ? `${w.versions}차` : ''}</span></div>
+          <div class="card-cover">${isExt(w.url) ? '<span class="ext">외부 사이트 ↗</span>' : ''}${cover(w)}</div>
           <div class="card-body">
             <div class="card-sub"><b>${esc(w.subject || '')}</b>${w.audience ? `<span>${esc(w.audience)}</span>` : ''}</div>
             <h3>${esc(w.title)}</h3>
             <p>${esc(w.summary || '')}</p>
-            <div class="card-foot"><span>${w.updated ? `UPDATED ${esc(w.updated)}` : ''}</span><span class="go">→</span></div>
+            <div class="card-foot"><span>${w.updated ? `${esc(w.updated)} 고침` : ''}</span><span class="go">→</span></div>
           </div>
         </button>`).join('');
       $('grid').querySelectorAll('.card').forEach(c => io ? io.observe(c) : c.classList.add('in'));
@@ -256,7 +261,7 @@
           <span class="r-title">${esc(w.title)}</span>
           <span class="r-dim r-sub">${esc(w.subject || '')}</span>
           <span class="r-dim r-kind">${esc(w.kind || '')}</span>
-          <span class="r-dim r-ver">${w.versions ? `REV.${String(w.versions).padStart(2, '0')}` : ''}</span>
+          <span class="r-dim r-ver">${w.versions ? `${w.versions}차` : ''}</span>
           <span class="r-go">${isExt(w.url) ? '↗' : '→'}</span>
         </li>`).join('');
     }
@@ -283,11 +288,11 @@
 
   // ── 실험 보고서(자세히 보기)
   function openSheet(w) {
-    $('sCode').innerHTML = `<b>${code(w)}</b> / LAB REPORT`;
+    $('sCode').innerHTML = `<b>${code(w)}</b> / 작품 소개`;
     $('sCover').innerHTML = cover(w);
     $('sKind').textContent = `// ${[groupOf(w), w.kind, w.subject].filter(Boolean).join(' · ')}`;
     $('sTitle').textContent = w.title;
-    $('sSpec').innerHTML = [['Target', w.audience], ['Revision', w.versions && `${w.versions}차`], ['Updated', w.updated], ['Source', isExt(w.url) ? '외부 링크' : '사이트 안']]
+    $('sSpec').innerHTML = [['대상', w.audience], ['버전', w.versions && `${w.versions}차`], ['고친 날', w.updated], ['위치', isExt(w.url) ? '외부 사이트' : '이 사이트 안']]
       .filter(x => x[1]).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
     const canEmbed = w.embed !== false;
     $('sActions').innerHTML =
@@ -297,7 +302,7 @@
       `<button class="btn" id="sQr">▦ QR 코드</button>` +
       `<button class="btn" id="sShare">주소 복사</button>`;
     $('sDesc').innerHTML = String(w.desc || w.summary || '').split(/\n+/).map(p => `<p>${esc(p)}</p>`).join('');
-    $('sUses').innerHTML = (w.uses || []).length ? `<h4>// 수업 적용 프로토콜</h4><ul class="uses">${w.uses.map(u => `<li>${esc(u)}</li>`).join('')}</ul>` : '';
+    $('sUses').innerHTML = (w.uses || []).length ? `<h4>// 수업에서 이렇게 써요</h4><ul class="uses">${w.uses.map(u => `<li>${esc(u)}</li>`).join('')}</ul>` : '';
     $('sFiles').innerHTML = (w.files || []).length ? `<h4>// 첨부 자료</h4><div class="files">${w.files.map(f => `<a class="pill" href="${esc(href(f.url))}" target="_blank" rel="noopener">⤓ ${esc(f.name)}</a>`).join('')}</div>` : '';
     $('sTags').innerHTML = (w.tags || []).map(t => `<li>#${esc(t)}</li>`).join('');
     $('sShare').onclick = async e => {
@@ -365,7 +370,7 @@
 
   // ── 바로 보기
   function openViewer(w) {
-    $('vTitle').textContent = `${code(w)}  ${w.title}`;
+    $('vTitle').textContent = w.title;
     $('viewer').hidden = false;
     $('vNew').href = href(w.url);
     if ($('vFrame').dataset.id !== w.id) { $('vFrame').src = href(w.url); $('vFrame').dataset.id = w.id; }
@@ -407,8 +412,11 @@
   import('./store.js').then(async m => {
     if (!m.enabled()) return;
     const remote = await m.loadRemote();
-    S = { ...S, ...remote.site };
-    W = m.mergeWorks(BASE, remote.works).filter(live);
-    refresh(false);
+    const site = { ...(window.SITE || {}), ...remote.site }, works = m.mergeWorks(BASE, remote.works).filter(live);
+    const same = JSON.stringify([works, site]) === JSON.stringify([W, S]);   // 기억해 둔 것과 같으면 다시 그리지 않음
+    S = site; W = works;
+    const keep = list => localStorage.setItem(CACHE, JSON.stringify({ api: API, works: list, site: remote.site }));
+    try { keep(W); } catch { try { keep(W.map(({ coverData, ...w }) => w)); } catch {} }   // 자리가 모자라면 넣어 둔 그림은 빼고 기억
+    if (!same) refresh(false);
   }).catch(err => console.warn('편집 내용을 불러오지 못했어요:', err));
 })();

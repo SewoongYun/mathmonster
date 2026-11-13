@@ -23,13 +23,13 @@
     <span class="brand-mark">∑</span>
     <span class="brand-text"><b id="brandName">MATH LAB</b><i id="brandSub"></i></span>
   </a>
-  <div class="status"><span class="dot"></span><span id="statusText">LAB OPEN</span></div>
+  <div class="status"><span class="dot"></span><span id="statusText">실험실 열림</span></div>
   <nav class="top-nav">
     <a href="#works">실험 목록</a>
     <a href="#about">연구 노트</a>
     <a id="navBlog" href="#" target="_blank" rel="noopener" hidden>블로그 ↗</a>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="밝게/어둡게 바꾸기">☾</button>
-    <a class="edit-link mono" href="edit.html" title="편집 (비밀번호 필요)">EDIT</a>
+    <a class="edit-link mono" href="edit.html" title="편집 (비밀번호 필요)">편집</a>
   </nav>
 </header>
 
@@ -58,18 +58,18 @@
   <section class="works" id="works">
     <div class="works-head">
       <div>
-        <p class="mono kicker">// 01 — EXPERIMENTS</p>
+        <p class="mono kicker">// 01</p>
         <h2 class="section-title">실험 기록 <span class="mono" id="count"></span></h2>
       </div>
       <div class="controls">
         <div class="tools">
           <label class="search">
             <span class="sr-only">검색</span>
-            <input id="q" type="search" placeholder="search: 단원, 태그…" autocomplete="off">
+            <input id="q" type="search" placeholder="검색: 단원, 태그…" autocomplete="off">
           </label>
           <div class="view-toggle mono" role="group" aria-label="보기 방식">
-            <button data-view="grid" aria-pressed="true">GRID</button>
-            <button data-view="index" aria-pressed="false">INDEX</button>
+            <button data-view="grid" aria-pressed="true">카드</button>
+            <button data-view="index" aria-pressed="false">목록</button>
           </div>
         </div>
       </div>
@@ -78,11 +78,11 @@
     <div class="chips" id="chips" role="tablist" aria-label="과목·주제로 거르기"></div>
     <div class="grid" id="grid"></div>
     <ol class="index" id="index" hidden></ol>
-    <p class="empty mono" id="empty" hidden>NO RESULT — 찾는 실험이 없어요.</p>
+    <p class="empty mono" id="empty" hidden>찾는 작품이 없어요.</p>
   </section>
 
   <section class="about" id="about">
-    <p class="mono kicker">// 02 — LAB NOTES</p>
+    <p class="mono kicker">// 02</p>
     <h2 class="section-title">연구 노트</h2>
     <div class="notes">
       <article class="note">
@@ -107,7 +107,7 @@
 <footer class="foot mono">
   <span id="footName"></span>
   <span class="foot-links" id="footLinks"></span>
-  <a href="#top">TOP ↑</a>
+  <a href="#top">맨 위로 ↑</a>
 </footer>
 
 <div class="peek" id="peek" aria-hidden="true"></div>
@@ -139,7 +139,7 @@
   <div class="qr-backdrop" data-qr-close></div>
   <div class="qr-panel" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
     <div class="sheet-head mono">
-      <span>SCAN TO OPEN</span>
+      <span>휴대폰으로 찍어 열기</span>
       <button class="icon-btn" data-qr-close aria-label="닫기">✕</button>
     </div>
     <h3 id="qrTitle"></h3>
@@ -161,11 +161,11 @@
 <div class="viewer" id="viewer" hidden>
   <div class="viewer-bar">
     <button class="icon-btn" id="vBack" aria-label="뒤로">←</button>
-    <span class="mono run"><span class="dot"></span>RUNNING</span>
+    <span class="mono run"><span class="dot"></span>실행 중</span>
     <strong id="vTitle"></strong>
     <span class="viewer-tools">
-      <button class="pill mono" id="vFull">FULLSCREEN</button>
-      <a class="pill mono" id="vNew" target="_blank" rel="noopener">NEW TAB ↗</a>
+      <button class="pill mono" id="vFull">전체 화면</button>
+      <a class="pill mono" id="vNew" target="_blank" rel="noopener">새 탭 ↗</a>
       <button class="icon-btn" id="vClose" aria-label="닫기">✕</button>
     </span>
   </div>

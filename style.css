@@ -208,11 +208,14 @@ body.locked { overflow: hidden; }
   background-size: 20px 20px;
 }
 .glyph-cover svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.glyph-cover span {
-  position: relative; font-family: var(--disp); font-weight: 700; color: #f1f4ee;
-  font-size: clamp(46px, 6vw, 88px); letter-spacing: -.03em; transition: transform .8s var(--ease);
-}
-.card:hover .glyph-cover span { transform: scale(1.08) rotate(-2deg); }
+/* 그림이 없는 작품: 기호(작게) + 제목(크게) */
+.gc-text { position: relative; width: 100%; padding: 0 9%; display: flex; flex-direction: column; gap: .35em; color: #f1f4ee; font-size: clamp(20px, 2.3vw, 30px); transition: transform .8s var(--ease); }
+.gc-text span { font-family: var(--disp); font-weight: 700; font-size: .8em; letter-spacing: -.02em; opacity: .75; }
+.gc-text span.auto { display: none; }
+.gc-text strong { font-weight: 800; line-height: 1.25; letter-spacing: -.03em; word-break: keep-all; text-wrap: balance; }
+.card:hover .gc-text { transform: scale(1.04); }
+.sheet-cover .gc-text { font-size: clamp(24px, 3vw, 34px); }
+.peek .gc-text { font-size: 20px; }
 .card-body { padding: 18px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .card-sub { font-size: 12.5px; color: var(--ink-3); display: flex; gap: 10px; }
 .card-sub b { color: var(--ink-2); font-weight: 600; }
@@ -418,4 +421,23 @@ body.locked { overflow: hidden; }
   .group-tab { padding: 10px 12px 12px; }
   .group-tab b { font-size: 17px; }
   .group-head b { font-size: 20px; }
+}
+
+/* ── 5차: 분류 탭 한 줄로, 휴대폰에서는 납작한 카드 */
+.group-tab { padding: 14px 16px; }
+@media (max-width: 720px) {
+  .group-tab { padding: 12px; }
+  .grid { gap: 10px; }
+  .card { display: grid; grid-template-columns: 104px 1fr; align-items: stretch; border-radius: 12px; transform: translateY(12px); }
+  .card-top, .card-foot, .card .ext, .card-cover::after { display: none; }
+  .card-cover, .card.featured .card-cover { aspect-ratio: auto; height: 100%; min-height: 104px; }
+  .card-cover img { position: absolute; inset: 0; }
+  .card-body { padding: 12px 14px; gap: 4px; min-width: 0; justify-content: center; }
+  .card-sub { font-size: 12px; }
+  .card h3, .card.featured h3 { font-size: 17px; }
+  .card p { font-size: 13.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* 좁은 그림 칸에는 제목 대신 기호(없으면 첫 글자)만 */
+  .card .gc-text { padding: 0; align-items: center; font-size: 30px; }
+  .card .gc-text strong { display: none; }
+  .card .gc-text span, .card .gc-text span.auto { display: block; font-size: 1em; opacity: 1; }
 }
