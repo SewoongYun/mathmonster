@@ -6,7 +6,7 @@
   const live = w => !!w.url;                          // 링크가 비어 있는 작품은 숨김
   let W = BASE.filter(live);
   // 마지막으로 받은 목록을 이 브라우저에 기억 — 다음에 열 때 예전 목록이 잠깐 보였다가 바뀌지 않게
-  const CACHE = 'lab-cache', API = (window.SHEET_API || '').trim();
+  const CACHE = 'lab-cache-6', API = (window.SHEET_API || '').trim();
   try {
     const c = JSON.parse(localStorage.getItem(CACHE));
     if (c && c.api === API && Array.isArray(c.works)) { W = c.works; S = { ...S, ...c.site }; }
@@ -49,7 +49,7 @@
     $('footName').textContent = `© ${today.getFullYear()} ${S.owner || ''} · ${S.title || 'MATH LAB'}`;
     const foot = [];
     for (const el of [$('navBlog'), $('heroBlog')]) { el.hidden = !S.blog; if (S.blog) el.href = S.blog; }
-    $('aboutBlog').innerHTML = S.blog ? `<a href="${esc(S.blog)}" target="_blank" rel="noopener">블로그</a>` : '블로그';
+    $('aboutBlog').innerHTML = S.blog ? ` 수업 운영 방법은 <a href="${esc(S.blog)}" target="_blank" rel="noopener">블로그</a>에 정리합니다.` : '';
     if (S.blog) foot.push(`<a href="${esc(S.blog)}" target="_blank" rel="noopener">블로그 ↗</a>`);
     if (S.email) foot.push(`<a href="mailto:${esc(S.email)}">${esc(S.email)}</a>`);
     $('footLinks').innerHTML = foot.join('');
@@ -172,13 +172,13 @@
     : `<div class="glyph-cover" style="--c:${esc(w.color || '#343a40')}">${plotSvg(w)}<div class="gc-text"><span${w.glyph ? '' : ' class="auto"'}>${esc(w.glyph || w.title[0])}</span><strong>${esc(w.title)}</strong></div></div>`;
 
   // ── 분류(수학 수업·학급 운영·동아리·개인) + 과목·주제
-  const GROUPS = [['수학 수업', 'MATH CLASS'], ['학급 운영', 'HOMEROOM'], ['동아리', 'CLUB'], ['개인', 'PERSONAL']];
+  const GROUPS = ['수학 수업', '학급 운영', '연구회·연수', '동아리', '개인'];
   // 분류를 안 고른 작품은 과목·종류·태그로 짐작
   const groupOf = w => w.group || (() => {
     const t = [w.subject, w.kind, ...(w.tags || [])].join(' ');
-    return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
+    return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /연구회|연수|페스타/.test(t) ? '연구회·연수' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
   })();
-  const groupNames = () => [...GROUPS.map(g => g[0]), ...new Set(W.map(groupOf).filter(g => !GROUPS.some(x => x[0] === g)))];
+  const groupNames = () => [...GROUPS, ...new Set(W.map(groupOf).filter(g => !GROUPS.includes(g)))];
 
   let group = '전체', subj = '전체', q = '', view = 'grid';
   try { view = localStorage.getItem('lab-view') || 'grid'; } catch {}
@@ -266,6 +266,53 @@
         </li>`).join('');
     }
   }
+  // ── 작품의 관계도 (실험 기록 옆 단추로 열림): 과목별 작품 + 두 과목을 잇는 작품 + 관련 도서
+  const MAP = window.MAP && Array.isArray(window.MAP.subjects) ? window.MAP : { subjects: [], books: [] };
+  const workOf = id => W.find(x => x.id === id);
+  const booksFor = id => (MAP.books || []).filter(b => b.to === id);
+  const chips = list => (list || []).length ? `<span class="chips-s">${list.map(c => `<i>${esc(c)}</i>`).join('')}</span>` : '';
+  const bookHtml = (b, here) => {
+    const w = workOf(b.to);
+    return `<li class="book">
+      <span class="book-spine" aria-hidden="true"></span>
+      <span class="book-info"><b>『${esc(b.title)}』${b.how ? `<i class="book-how">${esc(b.how)}</i>` : ""}</b><small>${esc([b.author, b.publisher].filter(Boolean).join(' · '))}</small>${b.note ? `<em>${esc(b.note)}${w && w.id !== here ? ` → <a href="#/w/${esc(w.id)}">${esc(w.title.split(' · ')[0])}</a>` : ''}</em>` : ''}</span>
+    </li>`;
+  };
+  const workCard = (it, w) => `<a class="mwork" href="#/w/${esc(w.id)}"><span class="mwork-kind">${esc(w.kind || '')}${w.versions ? ` · ${w.versions}차` : ''}</span><b>${esc(w.title.split(' · ')[0])}</b>${chips(it.concepts)}</a>`;
+  function buildThreads() {
+    const subjects = MAP.subjects.map(s => ({ ...s, items: (s.works || []).map(it => [it, workOf(it.id)]).filter(x => x[1]) })).filter(s => s.items.length);
+    const bw = MAP.bridge && workOf(MAP.bridge.id);
+    $('navMap').hidden = $('mapBtn').hidden = !subjects.length;
+    $('mapBody').innerHTML = `
+      <div class="smap-cols">${subjects.map((s, i) => {
+        const books = s.items.flatMap(([it]) => booksFor(it.id));
+        return `<section class="subj" style="--sc:${esc(s.color || '#5b625a')}">
+          <header><span class="mono">${String(i + 1).padStart(2, '0')}</span><h3>${esc(s.title)}</h3>${s.desc ? `<p>${esc(s.desc)}</p>` : ''}</header>
+          <ol class="subj-works">${s.items.map(([it, w]) => `<li>${workCard(it, w)}</li>`).join('')}</ol>
+          ${books.length ? `<div class="subj-books"><h4>관련 도서</h4><ul>${books.map(bookHtml).join('')}</ul></div>` : ''}
+        </section>`;
+      }).join('')}</div>
+      ${bw && subjects.length > 1 ? `
+      <svg class="smap-join" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M25 0 C25 6 50 4 50 10 M75 0 C75 6 50 4 50 10"/></svg>
+      <section class="bridge">
+        <p class="bridge-label mono">${esc(MAP.bridge.label || '두 과목을 잇는 작품')}</p>
+        ${workCard(MAP.bridge, bw)}
+        ${booksFor(bw.id).length ? `<div class="subj-books"><h4>관련 도서</h4><ul>${booksFor(bw.id).map(bookHtml).join('')}</ul></div>` : ''}
+      </section>` : ''}`;
+  }
+  // 작품 소개 창: 같은 과목의 다른 작품과 관련 도서
+  function relatedHtml(w) {
+    const s = MAP.subjects.find(s => (s.works || []).some(it => it.id === w.id));
+    const isBridge = MAP.bridge && MAP.bridge.id === w.id;
+    const others = s ? s.works.map(it => workOf(it.id)).filter(x => x && x.id !== w.id) : [];
+    const bw = MAP.bridge && workOf(MAP.bridge.id);
+    if (bw && s && bw.id !== w.id) others.push(bw);
+    if (isBridge) MAP.subjects.forEach(x => (x.works || []).forEach(it => { const o = workOf(it.id); if (o) others.push(o); }));
+    const books = booksFor(w.id);
+    return (others.length ? `<h4>// ${isBridge ? '이 작품이 잇는 두 과목의 작품' : `이어지는 작품 · ${esc(s.title)}`}</h4><div class="s-thread">${others.map(o => `<a href="#/w/${esc(o.id)}">${esc(o.title.split(' · ')[0])}</a>`).join('<i>·</i>')}</div>` : '') +
+      (books.length ? `<h4>// 관련 도서</h4><ul class="s-books">${books.map(b => bookHtml(b, w.id)).join('')}</ul>` : '');
+  }
+
   const open = id => { location.hash = `#/w/${id}`; };
   $('grid').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) open(c.dataset.id); });
   $('index').addEventListener('click', e => { const r = e.target.closest('.row'); if (r) open(r.dataset.id); });
@@ -302,7 +349,16 @@
       `<button class="btn" id="sQr">▦ QR 코드</button>` +
       `<button class="btn" id="sShare">주소 복사</button>`;
     $('sDesc').innerHTML = String(w.desc || w.summary || '').split(/\n+/).map(p => `<p>${esc(p)}</p>`).join('');
+    const paras = s => String(s || '').split(/\n+/).filter(Boolean).map(p => `<p>${esc(p)}</p>`).join('');
+    $('sWhy').innerHTML = w.why ? `<h4>// 만든 이유</h4><div class="why">${paras(w.why)}</div>` : '';
     $('sUses').innerHTML = (w.uses || []).length ? `<h4>// 수업에서 이렇게 써요</h4><ul class="uses">${w.uses.map(u => `<li>${esc(u)}</li>`).join('')}</ul>` : '';
+    // 써 보고 고친 기록: "16차 | 내용"
+    $('sLog').innerHTML = (w.log || []).length ? `<h4>// 써 보고 고친 기록</h4><ol class="log">${w.log.map(l => {
+      const [v, ...r] = String(l).split('|');
+      return r.length ? `<li><b class="mono">${esc(v.trim())}</b><span>${esc(r.join('|').trim())}</span></li>` : `<li><span>${esc(l)}</span></li>`;
+    }).join('')}</ol>` : '';
+    $('sVoices').innerHTML = (w.voices || []).length ? `<h4>// 수업 후기</h4><div class="voices">${w.voices.map(v => `<blockquote>${esc(v)}</blockquote>`).join('')}</div>` : '';
+    $('sThreads').innerHTML = relatedHtml(w);
     $('sFiles').innerHTML = (w.files || []).length ? `<h4>// 첨부 자료</h4><div class="files">${w.files.map(f => `<a class="pill" href="${esc(href(f.url))}" target="_blank" rel="noopener">⤓ ${esc(f.name)}</a>`).join('')}</div>` : '';
     $('sTags').innerHTML = (w.tags || []).map(t => `<li>#${esc(t)}</li>`).join('');
     $('sShare').onclick = async e => {
@@ -383,11 +439,14 @@
   $('vFull').onclick = () => $('viewer').requestFullscreen?.();
   $('vBack').onclick = () => { const id = (location.hash.match(/^#\/view\/(.+)/) || [])[1]; location.hash = id ? `#/w/${id}` : '#works'; };
   $('vClose').onclick = () => { location.hash = '#works'; };
-  document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => { location.hash = '#works'; }));
+  let back = '#works';                                   // 작품 소개를 닫으면 돌아갈 곳 (줄기 화면에서 열었으면 줄기로)
+  document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => { location.hash = back; }));
+  $('mapClose').onclick = () => { location.hash = '#works'; };
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (!$('qr').hidden) closeQr();
-    else if (!$('viewer').hidden) $('vBack').click(); else if (!$('sheet').hidden) location.hash = '#works';
+    else if (!$('viewer').hidden) $('vBack').click(); else if (!$('sheet').hidden) location.hash = back;
+    else if (!$('mapView').hidden) location.hash = '#works';
   });
 
   // ── 주소(#)로 화면 고르기 — 공유한 주소로 들어와도 같은 화면이 열림
@@ -397,7 +456,11 @@
     if (w && m[1] === 'view' && w.embed !== false) { $('sheet').hidden = true; openViewer(w); }
     else if (w) { closeViewer(); openSheet(w); }
     else { closeViewer(); $('sheet').hidden = true; }
-    document.body.classList.toggle('locked', !$('sheet').hidden || !$('viewer').hidden);
+    const onMap = location.hash === '#/map';
+    if (onMap && $('mapView').hidden) $('mapView').scrollTop = 0;
+    $('mapView').hidden = !onMap;
+    if (onMap) back = '#/map'; else if (!w) back = '#works';
+    document.body.classList.toggle('locked', !$('sheet').hidden || !$('viewer').hidden || onMap);
     document.title = w ? `${w.title} · ${S.title}` : `${S.title} · ${S.subtitle || ''}`;
   }
   addEventListener('hashchange', route);
@@ -405,14 +468,18 @@
   const top = $('top');
   addEventListener('scroll', () => top.classList.toggle('scrolled', scrollY > 20), { passive: true });
 
-  function refresh(animate) { applySite(); buildStats(animate); buildChips(); render(); route(); }
+  function refresh(animate) { applySite(); buildStats(animate); buildChips(); render(); buildThreads(); route(); }
   refresh(true);
 
   // ── 편집실에서 저장한 내용(구글 시트) 합치기
   import('./store.js').then(async m => {
     if (!m.enabled()) return;
     const remote = await m.loadRemote();
-    const site = { ...(window.SITE || {}), ...remote.site }, works = m.mergeWorks(BASE, remote.works).filter(live);
+    const site = { ...(window.SITE || {}), ...remote.site };
+    // 같은 주소의 작품이 시트에 따로 또 있으면 하나만 (사이트 파일 쪽을 남김)
+    const key = u => String(u || '').split('#')[0].replace(/\/+$/, '');
+    const works = m.mergeWorks(BASE, remote.works).filter(live)
+      .filter((w, i, a) => w.origin !== 'sheet' || !a.some(x => x !== w && x.origin === 'file' && key(x.url) === key(w.url)));
     const same = JSON.stringify([works, site]) === JSON.stringify([W, S]);   // 기억해 둔 것과 같으면 다시 그리지 않음
     S = site; W = works;
     const keep = list => localStorage.setItem(CACHE, JSON.stringify({ api: API, works: list, site: remote.site }));

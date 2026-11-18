@@ -26,6 +26,7 @@
   <div class="status"><span class="dot"></span><span id="statusText">실험실 열림</span></div>
   <nav class="top-nav">
     <a href="#works">실험 목록</a>
+    <a href="#/map" id="navMap">관계도</a>
     <a href="#about">연구 노트</a>
     <a id="navBlog" href="#" target="_blank" rel="noopener" hidden>블로그 ↗</a>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="밝게/어둡게 바꾸기">☾</button>
@@ -59,7 +60,10 @@
     <div class="works-head">
       <div>
         <p class="mono kicker">// 01</p>
-        <h2 class="section-title">실험 기록 <span class="mono" id="count"></span></h2>
+        <div class="works-title">
+          <h2 class="section-title">실험 기록 <span class="mono" id="count"></span></h2>
+          <a class="map-btn" href="#/map" id="mapBtn">작품의 관계도 →</a>
+        </div>
       </div>
       <div class="controls">
         <div class="tools">
@@ -87,18 +91,18 @@
     <div class="notes">
       <article class="note">
         <span class="mono note-no">01</span>
-        <h3>설치 없이, 바로 실행</h3>
-        <p>모든 실험은 브라우저에서 바로 열립니다. 휴대폰·태블릿·PC 어디서나 회원가입 없이 수업에 쓸 수 있어요.</p>
+        <h3>그대로 받아들이지 않게</h3>
+        <p>공식이나 통계 숫자를 외우게 하기보다 "이건 왜 그렇지?", "이 숫자는 어떻게 나왔지?"를 묻게 합니다. 먼저 예측하고, 손으로 실험하고, 그다음에 확인해요.</p>
       </article>
       <article class="note">
         <span class="mono note-no">02</span>
-        <h3>차수를 쌓아 다듬기</h3>
-        <p>수업에서 써 보고, 학생 반응을 보고, 다시 고칩니다. 작품마다 몇 번째 버전인지 함께 기록해 두었어요.</p>
+        <h3>써 보고, 듣고, 다시 고치기</h3>
+        <p>수업에서 써 보고 학생과 동료 선생님의 의견을 받아 다시 고칩니다. 좀비바이러스 연구실은 그렇게 16차까지 왔어요. 작품마다 고친 기록을 남겨 두었습니다.</p>
       </article>
       <article class="note">
         <span class="mono note-no">03</span>
-        <h3>활용법은 블로그에</h3>
-        <p>실제 수업 운영 방법, 학생 반응, 학습지는 <span id="aboutBlog">블로그</span>에 정리합니다. 수업에 쓰셨다면 이야기 들려주세요.</p>
+        <h3>설치 없이, 바로 실행</h3>
+        <p>모든 작품은 브라우저에서 바로 열립니다. 휴대폰·태블릿·PC 어디서나 회원가입 없이 쓸 수 있고, 학생 이름이나 성적은 저장하지 않아요.<span id="aboutBlog"></span></p>
       </article>
     </div>
   </section>
@@ -111,6 +115,19 @@
 </footer>
 
 <div class="peek" id="peek" aria-hidden="true"></div>
+
+<!-- 작품의 관계도 (실험 기록 옆 단추나 위쪽 메뉴를 눌러야 열림) -->
+<div class="mapview" id="mapView" hidden>
+  <div class="mapview-bar">
+    <button class="icon-btn" id="mapClose" aria-label="닫기">←</button>
+    <strong>작품의 관계도</strong>
+  </div>
+  <div class="mapview-body">
+    <h2 class="section-title">과목으로 이어진 작품</h2>
+    <p class="section-lead">과목마다 어떤 작품이 이어져 있는지, 그 작품이 어떤 개념을 다루는지, 함께 읽으면 좋은 책은 무엇인지 모았어요. 작품을 누르면 소개가 열려요.</p>
+    <div class="smap" id="mapBody"></div>
+  </div>
+</div>
 
 <!-- 자세히 보기 -->
 <div class="sheet" id="sheet" hidden>
@@ -127,8 +144,12 @@
       <dl class="spec mono" id="sSpec"></dl>
       <div class="actions" id="sActions"></div>
       <div class="sheet-desc" id="sDesc"></div>
+      <div id="sWhy"></div>
       <div id="sUses"></div>
+      <div id="sLog"></div>
+      <div id="sVoices"></div>
       <div id="sFiles"></div>
+      <div id="sThreads"></div>
       <ul class="tags mono" id="sTags"></ul>
     </div>
   </article>

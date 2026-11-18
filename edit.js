@@ -15,7 +15,7 @@ const baseOf = id => BASE.find(b => b.id === id);
 // 분류를 안 고른 작품은 과목·종류·태그로 짐작 (방문자 화면 app.js와 같은 규칙)
 const groupOf = w => w.group || (() => {
   const t = [w.subject, w.kind, ...(w.tags || [])].join(' ');
-  return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
+  return /동아리/.test(t) ? '동아리' : /학급|담임|입시|진로|생활|습관/.test(t) ? '학급 운영' : /연구회|연수|페스타/.test(t) ? '연구회·연수' : /개인|실험작|취미/.test(t) ? '개인' : '수학 수업';
 })();
 let remote = { works: {}, site: {} }, list = [];
 
@@ -202,8 +202,10 @@ function openEditor(w) {
   cur = w || null; idTouched = false;
   F.reset(); $('edErr').hidden = true; $('edStep').textContent = '';
   const x = w || { color: '#3b5bdb', updated: new Date().toISOString().slice(0, 10), embed: true };
-  $('edHead').innerHTML = w ? `<b>EDIT</b> / ${esc(w.title)}` : '<b>NEW</b> / 새 링크';
-  for (const k of ['title', 'kind', 'subject', 'audience', 'summary', 'desc', 'glyph', 'updated', 'blog', 'versions']) E[k].value = x[k] ?? '';
+  $('edHead').innerHTML = w ? `<b>고치기</b> / ${esc(w.title)}` : '<b>새 작품</b> / 링크 추가';
+  for (const k of ['title', 'kind', 'subject', 'audience', 'summary', 'desc', 'why', 'glyph', 'updated', 'blog', 'versions']) E[k].value = x[k] ?? '';
+  E.log.value = (x.log || []).join('\n');
+  E.voices.value = (x.voices || []).join('\n');
   E.group.value = groupOf(x);
   E.color.value = /^#[0-9a-f]{6}$/i.test(x.color || '') ? x.color : '#3b5bdb';
   E.uses.value = (x.uses || []).join('\n');
@@ -270,7 +272,8 @@ F.addEventListener('submit', async e => {
   const files = lines(E.files.value).map(l => { const [name, ...r] = l.split('|'); return { name: name.trim(), url: r.join('|').trim() }; }).filter(f => f.name && f.url);
   const d = {
     title: E.title.value.trim(), group: E.group.value, kind: E.kind.value.trim(), subject: E.subject.value.trim(), audience: E.audience.value.trim(),
-    summary: E.summary.value.trim(), desc: E.desc.value.trim(), uses: lines(E.uses.value),
+    summary: E.summary.value.trim(), desc: E.desc.value.trim(), why: E.why.value.trim(), uses: lines(E.uses.value),
+    log: lines(E.log.value), voices: lines(E.voices.value),
     tags: E.tags.value.split(',').map(s => s.trim()).filter(Boolean),
     url, embed, cover: coverState.path, coverData: coverState.data, glyph: E.glyph.value.trim(), color: E.color.value,
     versions: E.versions.value === '' ? '' : +E.versions.value, updated: E.updated.value.trim(), blog: E.blog.value.trim(),

@@ -30,11 +30,11 @@
 
 <main class="ed-main">
 
-  <section id="loading" class="ed-card ed-center"><p class="mono">LOADING…</p></section>
+  <section id="loading" class="ed-card ed-center"><p class="mono">불러오는 중…</p></section>
 
   <!-- 처음 설정 안내 -->
   <section id="setup" class="ed-card" hidden>
-    <p class="mono kicker">// SETUP — 처음 한 번만</p>
+    <p class="mono kicker">// 처음 한 번만</p>
     <h1>편집실 준비하기</h1>
     <p class="lead">편집한 내용은 선생님의 <b>구글 시트</b>에 저장되고, 저장하는 순간 모든 방문자에게 보여요. 아래 순서대로 한 번만 설정하면 됩니다. (약 10분, 무료)</p>
     <ol class="steps">
@@ -71,7 +71,7 @@
 
   <!-- 로그인 -->
   <section id="login" class="ed-card ed-narrow" hidden>
-    <p class="mono kicker">// ACCESS — 관리자 전용</p>
+    <p class="mono kicker">// 관리자 전용</p>
     <h1>편집실 들어가기</h1>
     <form id="loginForm" class="stack">
       <label class="fld"><span>편집 비밀번호</span><input id="pw" type="password" autocomplete="current-password" required></label>
@@ -85,7 +85,7 @@
   <section id="app" hidden>
     <div class="ed-head">
       <div>
-        <p class="mono kicker">// EDITOR</p>
+        <p class="mono kicker">// 작품과 사이트 정보 고치기</p>
         <h1>편집실</h1>
       </div>
       <div class="tabs" role="tablist">
@@ -162,7 +162,7 @@
       <div class="row2">
         <label class="fld"><span>분류 * <small>사이트 위쪽 탭</small></span>
           <select name="group">
-            <option>수학 수업</option><option>학급 운영</option><option>동아리</option><option>개인</option>
+            <option>수학 수업</option><option>학급 운영</option><option>연구회·연수</option><option>동아리</option><option>개인</option>
           </select></label>
         <label class="fld"><span>종류</span><input name="kind" list="kinds" placeholder="게임 / 교재 / 앱 / 자료"></label>
       </div>
@@ -173,7 +173,10 @@
       <label class="fld"><span>공유 주소 이름 <small>영문·숫자·하이픈, 영문 글자 1개 이상</small></span><input name="id" class="mono" pattern="[a-z0-9-]+"></label>
       <label class="fld"><span>한 줄 소개 *</span><input name="summary" required maxlength="140"></label>
       <label class="fld"><span>자세한 설명 <small>빈 줄로 문단 나누기</small></span><textarea name="desc" rows="5"></textarea></label>
+      <label class="fld"><span>만든 이유 <small>왜 만들었는지 2~3문장</small></span><textarea name="why" rows="3"></textarea></label>
       <label class="fld"><span>수업 활용 아이디어 <small>한 줄에 하나</small></span><textarea name="uses" rows="3"></textarea></label>
+      <label class="fld"><span>써 보고 고친 기록 <small>한 줄에 하나: 차수 | 받은 의견 → 바꾼 것 (최근 것부터)</small></span><textarea name="log" rows="3" placeholder="16차 | 난이도를 나눠 달라는 의견 → 상·중·하 추가"></textarea></label>
+      <label class="fld"><span>수업 후기 <small>한 줄에 하나. 학생 이름·성적은 쓰지 않기</small></span><textarea name="voices" rows="2" placeholder="문이 열릴 때 계산이 맞았다는 걸 알아서 좋았어요."></textarea></label>
       <label class="fld"><span>태그 <small>쉼표로 나누기</small></span><input name="tags" placeholder="방탈출, 조건부확률"></label>
 
       <fieldset class="fld">
