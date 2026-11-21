@@ -519,3 +519,45 @@ body.locked { overflow: hidden; }
 .subj-works + .subj-books { padding-top: 16px; }
 .subj-works { margin-bottom: 22px; }
 .smap-join { margin-top: -1px; }
+
+/* ── 7차: 작품의 관계도를 그래프 뷰(점과 선)로 */
+.graph { position: relative; margin-top: 28px; height: clamp(440px, 66vh, 760px); border: 1px solid var(--line); border-radius: 18px; background: var(--panel); overflow: hidden; }
+.graph svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.graph svg:active { cursor: grabbing; }
+.ge { stroke: var(--line-2); stroke-width: 1; vector-effect: non-scaling-stroke; transition: opacity .2s, stroke .2s; }
+.gn { cursor: pointer; transition: opacity .2s; outline: none; }
+.gn circle { fill: var(--ink-3); transition: r .2s, fill .2s; }
+.gn text { font-family: var(--sans); font-size: 11.5px; fill: var(--ink-3); text-anchor: middle; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.gn .sub { font-size: 10px; opacity: 0; transition: opacity .2s; }
+.t-hub circle { fill: var(--nc); }
+.t-hub text { font-size: 15px; font-weight: 800; fill: color-mix(in srgb, var(--nc) 75%, var(--ink)); }
+.t-work circle { fill: color-mix(in srgb, var(--nc) 45%, var(--ink-2)); }
+.t-work text { font-size: 13px; font-weight: 700; fill: var(--ink); }
+.t-concept circle { fill: color-mix(in srgb, var(--nc) 25%, var(--ink-3)); }
+.t-book circle { fill: var(--panel); stroke: color-mix(in srgb, var(--nc) 45%, var(--ink-3)); stroke-width: 1.6px; }
+.t-book text:not(.sub) { font-style: italic; }
+.graph svg.focus .gn:not(.hot) { opacity: .14; }
+.graph svg.focus .ge:not(.hot) { opacity: .1; }
+.ge.hot { stroke: var(--ink-3); stroke-width: 1.6; }
+.gn.hot .sub { opacity: 1; }
+.gn:hover circle, .gn:focus-visible circle { fill: var(--nc); }
+.t-book:hover circle, .t-book:focus-visible circle { fill: var(--panel); stroke: var(--nc); }
+.graph-tools { position: absolute; top: 12px; right: 12px; display: grid; gap: 6px; }
+.graph-tools button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink-2); font-size: 15px; }
+.graph-tools button:hover { color: var(--ink); border-color: var(--ink-3); }
+.graph-legend { position: absolute; left: 14px; bottom: 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-3); pointer-events: none; }
+.graph-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lg { display: inline-block; border-radius: 50%; }
+.lg.hub { width: 12px; height: 12px; background: linear-gradient(90deg, #b0623a 50%, #2f7d5b 50%); }
+.lg.work { width: 10px; height: 10px; background: var(--ink-2); }
+.lg.concept { width: 6px; height: 6px; background: var(--ink-3); }
+.lg.book { width: 9px; height: 9px; border: 1.6px solid var(--ink-3); }
+.graph-books { margin-top: 32px; }
+.graph-books h4 { margin: 0 0 14px; font-size: 15px; }
+.graph-books h4 small { margin-left: 6px; font-weight: 400; font-size: 13px; color: var(--ink-3); }
+.graph-books ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 28px; }
+@media (max-width: 720px) {
+  .graph { height: 62vh; border-radius: 14px; }
+  .graph-legend { font-size: 11px; }
+}
+.ge.weak { stroke-dasharray: 3 4; opacity: .7; }

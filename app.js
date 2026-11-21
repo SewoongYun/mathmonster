@@ -6,7 +6,7 @@
   const live = w => !!w.url;                          // 링크가 비어 있는 작품은 숨김
   let W = BASE.filter(live);
   // 마지막으로 받은 목록을 이 브라우저에 기억 — 다음에 열 때 예전 목록이 잠깐 보였다가 바뀌지 않게
-  const CACHE = 'lab-cache-6', API = (window.SHEET_API || '').trim();
+  const CACHE = 'lab-cache-7', API = (window.SHEET_API || '').trim();
   try {
     const c = JSON.parse(localStorage.getItem(CACHE));
     if (c && c.api === API && Array.isArray(c.works)) { W = c.works; S = { ...S, ...c.site }; }
@@ -270,7 +270,6 @@
   const MAP = window.MAP && Array.isArray(window.MAP.subjects) ? window.MAP : { subjects: [], books: [] };
   const workOf = id => W.find(x => x.id === id);
   const booksFor = id => (MAP.books || []).filter(b => b.to === id);
-  const chips = list => (list || []).length ? `<span class="chips-s">${list.map(c => `<i>${esc(c)}</i>`).join('')}</span>` : '';
   const bookHtml = (b, here) => {
     const w = workOf(b.to);
     return `<li class="book">
@@ -278,27 +277,162 @@
       <span class="book-info"><b>『${esc(b.title)}』${b.how ? `<i class="book-how">${esc(b.how)}</i>` : ""}</b><small>${esc([b.author, b.publisher].filter(Boolean).join(' · '))}</small>${b.note ? `<em>${esc(b.note)}${w && w.id !== here ? ` → <a href="#/w/${esc(w.id)}">${esc(w.title.split(' · ')[0])}</a>` : ''}</em>` : ''}</span>
     </li>`;
   };
-  const workCard = (it, w) => `<a class="mwork" href="#/w/${esc(w.id)}"><span class="mwork-kind">${esc(w.kind || '')}${w.versions ? ` · ${w.versions}차` : ''}</span><b>${esc(w.title.split(' · ')[0])}</b>${chips(it.concepts)}</a>`;
+  // 그래프 뷰(옵시디언처럼 점과 선): 과목 → 작품 → 개념·관련 도서. 점을 누르면 그 작품 소개가 열림
+  let graph = null;
   function buildThreads() {
     const subjects = MAP.subjects.map(s => ({ ...s, items: (s.works || []).map(it => [it, workOf(it.id)]).filter(x => x[1]) })).filter(s => s.items.length);
     const bw = MAP.bridge && workOf(MAP.bridge.id);
     $('navMap').hidden = $('mapBtn').hidden = !subjects.length;
+    if (graph) graph.stop();
+    graph = null;
+    if (!subjects.length) { $('mapBody').innerHTML = ''; return; }
+
+    // 점과 선 만들기 (같은 이름의 개념은 한 점으로)
+    const nodes = [], links = [], byKey = {};
+    const add = (key, o, parent, i) => {
+      if (byKey[key]) return byKey[key];
+      const a = (i || 0) * 2.4 + (parent ? Math.atan2(parent.y, parent.x) : 0), d = o.type === 'work' ? 120 : 55;
+      const n = { x: parent ? parent.x + Math.cos(a) * d : 0, y: parent ? parent.y + Math.sin(a) * d : 0, key, ...o, nb: new Set(), vx: 0, vy: 0 };
+      nodes.push(n); byKey[key] = n; return n;
+    };
+    const link = (a, b, len) => { links.push({ a, b, len }); a.nb.add(b); b.nb.add(a); };
+    const addWork = (it, w, color, hubs) => {
+      const n = add('w:' + w.id, { type: 'work', label: w.title.split(' · ')[0], id: w.id, color, r: 10 }, hubs[0], hubs[0].nb.size);
+      if (hubs.length > 1) { n.x = 0; n.y = 150; }
+      hubs.forEach(h => link(h, n, hubs.length > 1 ? 140 : 95));
+      (it.concepts || []).forEach((c, i) => link(n, add('c:' + c, { type: 'concept', label: c, id: w.id, color, r: 5 }, n, i), 44));
+    };
+    const hubs = subjects.map((s, i) => add('s:' + s.title, { type: 'hub', label: s.title, color: s.color || '#5b625a', r: 13, x: (i - (subjects.length - 1) / 2) * 300, y: 0 }));
+    subjects.forEach((s, i) => s.items.forEach(([it, w]) => addWork(it, w, s.color, [hubs[i]])));
+    if (bw) addWork(MAP.bridge, bw, '', hubs);
+    (MAP.books || []).forEach((b, i) => {
+      const t = byKey['w:' + b.to];
+      if (t) link(t, add('b:' + b.title, { type: 'book', label: `『${b.title}』`, sub: [b.author, b.publisher].filter(Boolean).join(' · '), id: b.to, color: t.color, r: 6 }, t, i + 3), 58);
+    });
+    (MAP.links || []).forEach(([p, q]) => { const a = byKey['c:' + p], b = byKey['c:' + q]; if (a && b) { link(a, b, 90); links[links.length - 1].weak = true; } });
+    nodes.forEach((n, i) => { n.i = i; });
+
+    const bookList = (MAP.books || []).filter(b => byKey['w:' + b.to]);
     $('mapBody').innerHTML = `
-      <div class="smap-cols">${subjects.map((s, i) => {
-        const books = s.items.flatMap(([it]) => booksFor(it.id));
-        return `<section class="subj" style="--sc:${esc(s.color || '#5b625a')}">
-          <header><span class="mono">${String(i + 1).padStart(2, '0')}</span><h3>${esc(s.title)}</h3>${s.desc ? `<p>${esc(s.desc)}</p>` : ''}</header>
-          <ol class="subj-works">${s.items.map(([it, w]) => `<li>${workCard(it, w)}</li>`).join('')}</ol>
-          ${books.length ? `<div class="subj-books"><h4>관련 도서</h4><ul>${books.map(bookHtml).join('')}</ul></div>` : ''}
-        </section>`;
-      }).join('')}</div>
-      ${bw && subjects.length > 1 ? `
-      <svg class="smap-join" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M25 0 C25 6 50 4 50 10 M75 0 C75 6 50 4 50 10"/></svg>
-      <section class="bridge">
-        <p class="bridge-label mono">${esc(MAP.bridge.label || '두 과목을 잇는 작품')}</p>
-        ${workCard(MAP.bridge, bw)}
-        ${booksFor(bw.id).length ? `<div class="subj-books"><h4>관련 도서</h4><ul>${booksFor(bw.id).map(bookHtml).join('')}</ul></div>` : ''}
-      </section>` : ''}`;
+      <div class="graph">
+        <svg id="gSvg" role="img" aria-label="작품의 관계도"><g id="gView">
+          ${links.map(l => `<line class="ge${l.weak ? ' weak' : ''}"/>`).join('')}
+          ${nodes.map(n => {
+            const tag = n.id ? 'a' : 'g';
+            return `<${tag} class="gn t-${n.type}" data-n="${n.i}"${n.id ? ` href="#/w/${esc(n.id)}"` : ''} style="--nc:${esc(n.color || 'var(--ink)')}">
+              <title>${esc(n.label)}${n.sub ? ` — ${esc(n.sub)}` : ''}${n.id ? ' (누르면 작품 소개)' : ''}</title>
+              <circle r="${n.r}"/><text y="${n.r + 14}">${esc(n.label)}</text>${n.sub ? `<text class="sub" y="${n.r + 28}">${esc(n.sub)}</text>` : ''}
+            </${tag}>`;
+          }).join('')}
+        </g></svg>
+        <div class="graph-tools mono">
+          <button type="button" data-z="1.25" aria-label="확대">＋</button>
+          <button type="button" data-z="0.8" aria-label="축소">−</button>
+          <button type="button" data-z="0" aria-label="한눈에 보기">⤢</button>
+        </div>
+        <p class="graph-legend mono"><span><i class="lg hub"></i>과목</span><span><i class="lg work"></i>작품</span><span><i class="lg concept"></i>개념</span><span><i class="lg book"></i>관련 도서</span></p>
+      </div>
+      ${bookList.length ? `<div class="graph-books"><h4>관련 도서 <small>읽었거나 작품에 인용한 책</small></h4><ul>${bookList.map(b => bookHtml(b).replace('<li class="book"', `<li class="book" style="--sc:${esc(byKey['w:' + b.to].color || '#5b5bd6')}"`)).join('')}</ul></div>` : ''}`;
+
+    const svg = $('gSvg'), view = $('gView');
+    const lineEls = [...svg.querySelectorAll('.ge')], nodeEls = [...svg.querySelectorAll('.gn')];
+    let tx = 0, ty = 0, k = 1, alpha = 1, raf = 0, drag = null, moved = false;
+
+    // 힘 계산: 점끼리 밀어내고, 선은 용수철처럼 당기고, 가운데로 살짝 모음
+    const push = { hub: 620, work: 400, concept: 130, book: 150 };
+    function step() {
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+        if (d2 < 1) { dx = .5; dy = .3; d2 = 1; }
+        const d = Math.sqrt(d2), min = a.r + b.r + 26;
+        const fa = push[b.type] * alpha / d2, fb = push[a.type] * alpha / d2;
+        a.vx -= dx * fa; a.vy -= dy * fa; b.vx += dx * fb; b.vy += dy * fb;
+        if (d < min) { const o = (min - d) / d * .25; a.vx -= dx * o; a.vy -= dy * o; b.vx += dx * o; b.vy += dy * o; }
+      }
+      links.forEach(({ a, b, len, weak }) => {
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - len) / d * alpha * (weak ? .12 : .35);
+        const wa = b.nb.size / (a.nb.size + b.nb.size);
+        a.vx += dx * f * wa; a.vy += dy * f * wa; b.vx -= dx * f * (1 - wa); b.vy -= dy * f * (1 - wa);
+      });
+      nodes.forEach(n => {
+        n.vx -= n.x * .012 * alpha; n.vy -= n.y * .012 * alpha;
+        if (n.fx != null) { n.x = n.fx; n.y = n.fy; n.vx = n.vy = 0; return; }
+        n.vx *= .55; n.vy *= .55; n.x += n.vx; n.y += n.vy;
+      });
+      alpha *= .985;
+    }
+    function draw() {
+      links.forEach((l, i) => { const e = lineEls[i]; e.setAttribute('x1', l.a.x); e.setAttribute('y1', l.a.y); e.setAttribute('x2', l.b.x); e.setAttribute('y2', l.b.y); });
+      nodes.forEach((n, i) => nodeEls[i].setAttribute('transform', `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`));
+      view.setAttribute('transform', `translate(${tx},${ty}) scale(${k})`);
+    }
+    function loop() { step(); draw(); raf = alpha > .004 ? requestAnimationFrame(loop) : 0; }
+    const heat = a => { alpha = Math.max(alpha, a); if (!raf) raf = requestAnimationFrame(loop); };
+    for (let i = 0; i < 260; i++) step();   // 처음부터 거의 자리 잡은 모양으로
+    alpha = .12;
+
+    // 화면 크기에 맞춰 한눈에 보이게
+    function fit() {
+      const w = svg.clientWidth, h = svg.clientHeight;
+      if (!w) return;
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+      const x0 = Math.min(...xs) - 80, x1 = Math.max(...xs) + 80, y0 = Math.min(...ys) - 30, y1 = Math.max(...ys) + 50;
+      k = Math.min(w / (x1 - x0), h / (y1 - y0), 1.5);
+      if (w < 600) k = Math.max(k, .8);   // 휴대폰에서는 글자가 읽히게 조금 크게 (옆은 끌어서 보기)
+      tx = w / 2 - (x0 + x1) / 2 * k; ty = h / 2 - (y0 + y1) / 2 * k;
+      draw(); heat(.12);
+    }
+    function zoom(f, cx = svg.clientWidth / 2, cy = svg.clientHeight / 2) {
+      const nk = Math.min(4, Math.max(.3, k * f));
+      tx = cx - (cx - tx) * nk / k; ty = cy - (cy - ty) * nk / k; k = nk; draw();
+    }
+    svg.closest('.graph').querySelectorAll('[data-z]').forEach(b => { b.onclick = () => +b.dataset.z ? zoom(+b.dataset.z) : fit(); });
+    svg.addEventListener('wheel', e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+
+    // 마우스를 올린 점과 이어진 점·선만 진하게
+    function focus(n) {
+      svg.classList.toggle('focus', !!n);
+      nodeEls.forEach((e, i) => e.classList.toggle('hot', !!n && (nodes[i] === n || n.nb.has(nodes[i]))));
+      lineEls.forEach((e, i) => e.classList.toggle('hot', !!n && (links[i].a === n || links[i].b === n)));
+    }
+    nodeEls.forEach((e, i) => {
+      e.addEventListener('pointerenter', ev => { if (ev.pointerType === 'mouse' && !drag) focus(nodes[i]); });
+      e.addEventListener('pointerleave', () => { if (!drag) focus(null); });
+      e.addEventListener('focus', () => focus(nodes[i]));
+      e.addEventListener('blur', () => focus(null));
+      e.addEventListener('click', ev => { if (moved) ev.preventDefault(); else if (!nodes[i].id) focus(e.classList.contains('hot') && svg.classList.contains('focus') ? null : nodes[i]); });
+    });
+
+    // 끌기: 점을 끌면 점이, 빈 곳을 끌면 화면이 움직임 (조금만 움직였으면 누른 것으로 봄)
+    svg.addEventListener('pointerdown', e => {
+      if (e.button) return;
+      const el = e.target.closest('.gn');
+      drag = { n: el ? nodes[+el.dataset.n] : null, x: e.clientX, y: e.clientY, tx, ty };
+      moved = false;
+    });
+    addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!moved && Math.hypot(dx, dy) < 5) return;
+      moved = true;
+      if (drag.n) {
+        const r = svg.getBoundingClientRect();
+        drag.n.fx = (e.clientX - r.left - tx) / k; drag.n.fy = (e.clientY - r.top - ty) / k;
+        focus(drag.n); heat(.3);
+      } else { tx = drag.tx + dx; ty = drag.ty + dy; draw(); }
+    });
+    addEventListener('pointerup', () => {
+      if (!drag) return;
+      if (drag.n) { drag.n.fx = drag.n.fy = null; heat(.15); if (moved) focus(null); }
+      drag = null;
+      setTimeout(() => { moved = false; });
+    });
+
+    graph = { fit, stop: () => cancelAnimationFrame(raf) };
+    if (!$('mapView').hidden) requestAnimationFrame(fit);
+    draw();
   }
   // 작품 소개 창: 같은 과목의 다른 작품과 관련 도서
   function relatedHtml(w) {
@@ -458,12 +592,15 @@
     else { closeViewer(); $('sheet').hidden = true; }
     const onMap = location.hash === '#/map';
     if (onMap && $('mapView').hidden) $('mapView').scrollTop = 0;
+    const opening = onMap && $('mapView').hidden;
     $('mapView').hidden = !onMap;
+    if (opening && graph) requestAnimationFrame(graph.fit);
     if (onMap) back = '#/map'; else if (!w) back = '#works';
     document.body.classList.toggle('locked', !$('sheet').hidden || !$('viewer').hidden || onMap);
     document.title = w ? `${w.title} · ${S.title}` : `${S.title} · ${S.subtitle || ''}`;
   }
   addEventListener('hashchange', route);
+  addEventListener('resize', () => { if (graph && !$('mapView').hidden) graph.fit(); });
 
   const top = $('top');
   addEventListener('scroll', () => top.classList.toggle('scrolled', scrollY > 20), { passive: true });
